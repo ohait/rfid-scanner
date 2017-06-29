@@ -50,8 +50,8 @@ Adafruit_SSD1306 display(OLED_RESET);
 #endif
 
 const char* ssid_pwd(const char* ssid) {
-  if (strcmp(ssid, "oha.it")==0) return "francesco";
-  if (strcmp(ssid, "hovedbib")==0) return "lesehest";
+  if (strcmp(ssid, "oha.it")==0) return OHAIT_P;
+  if (strcmp(ssid, "hovedbib")==0) return HOVEDBIB_P;
   return 0;
 }
 
