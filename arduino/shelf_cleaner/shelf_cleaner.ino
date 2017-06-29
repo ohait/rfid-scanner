@@ -49,6 +49,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
+#include "secrets.h"
 const char* ssid_pwd(const char* ssid) {
   if (strcmp(ssid, "oha.it")==0) return OHAIT_P;
   if (strcmp(ssid, "hovedbib")==0) return HOVEDBIB_P;
