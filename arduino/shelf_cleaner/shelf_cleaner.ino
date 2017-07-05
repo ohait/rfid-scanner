@@ -219,12 +219,14 @@ void loop() {
     }
     if (must_read) {
       memcpy(pos, out+5, 8); // rfid tag id
+      pos[8] = 0; // flags TODO if button, send check-in
+      pos += 8;
       int len = rfid_req(read_block, out);
       serialhexdump(out, len);
       if (len<128) {
-        pos[8] = len-4;
-        memcpy(pos+9, out+4, len-4); // skip first 4 bytes (len+frame+cmd)
-        pos += 9+len-4;
+        pos[0] = len-4; pos++;
+        memcpy(pos+1, out+4, len-4); // skip first 4 bytes (len+frame+cmd)
+        pos += len-4;
         
         if (memcmp(out+4, "SHELF#", 6)==0) {
           memcpy(shelf, out+4+6, 32-6);
@@ -248,8 +250,9 @@ void loop() {
     } 
     else { // only the tag id will be sent
       memcpy(pos, out+5, 8); // rfid tag id
-      pos[8] = 0;
-      pos += 9;
+      pos[8] = 0; // flags
+      pos[9] = 0; // length
+      pos += 10;
       toneTick();
     }
     // tell the CURRENT_TAG to stay quiet (until it exits the field)
