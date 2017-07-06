@@ -219,7 +219,7 @@ void loop() {
     if (must_read) {
       memcpy(pos, out+5, 8); // rfid tag id
       pos[8] = 0; // flags TODO if button, send check-in
-      pos += 8;
+      pos += 9;
       int len = rfid_req(read_block, out);
       serialhexdump(out, len);
       if (len<128) {
