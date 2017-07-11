@@ -89,8 +89,8 @@ const char* url() {
 
 
 byte mac[6];
- 
-#define QUEUE_SIZE (40*200)
+
+#define QUEUE_SIZE (40*500)
 // QUEUE of tags found, ready to send
 byte* _queue = (byte*)malloc(QUEUE_SIZE+40);
 byte* queue = _queue+40;
