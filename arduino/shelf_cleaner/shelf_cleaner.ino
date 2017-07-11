@@ -224,35 +224,39 @@ void loop() {
         }
       }
     }
+    if (is_queued(out+5)) {
+      must_read = 0;
+    }
     if (must_read) {
       memcpy(pos, out+5, 8); // rfid tag id
       pos[8] = 0; // flags TODO if button, send check-in
       pos += 9;
       int len = rfid_req(read_block, out);
-      serialhexdump(out, len);
-      if (len<128) {
+      //SERIALHEXDUMP(out, len);
+
+      if (len>128) { // IGNORE
+      } else if (len<4) { // IGNORE
+      } else if (memcmp(out+4, "SHELF#", 6)==0) {
+        pos[-1] = 128; // raise shelf flag
         pos[0] = len-4; pos++;
-        memcpy(pos+1, out+4, len-4); // skip first 4 bytes (len+frame+cmd)
+        memcpy(pos, out+4, len-4); // skip first 4 bytes (len+frame+cmd)
         pos += len-4;
-        
-        if (memcmp(out+4, "SHELF#", 6)==0) {
-          memcpy(shelf, out+4+6, 32-6);
-          shelf_expire = millis() + 1000*60;
-          // TODO fetch more data, and search for SSID/PWD
-          toneOK();
-        }
-        else {
-          if (shelf_expire) {
-            shelf_expire = millis() + 1000*60;
-            toneTick();
-          } else {
-            toneTock();
-          }
-        }
+
+        memcpy(shelf, out+4+6, 32-6);
+        shelf_expire = millis() + 1000*60;
+        // TODO fetch more data, and search for SSID/PWD
+        toneOK();
       }
       else {
-        Serial.println(String("Expected less data, got: ")+len);
-        serialhexdump(out, len);
+        pos[0] = len-4; pos++;
+        memcpy(pos, out+4, len-4); // skip first 4 bytes (len+frame+cmd)
+        pos += len-4;
+        if (shelf_expire) {
+          shelf_expire = millis() + 1000*60;
+          toneTick();
+        } else {
+          toneTock();
+        }
       }
     } 
     else { // only the tag id will be sent
@@ -281,6 +285,24 @@ void loop() {
 //  }
 
   send_queue(); // deque
+}
+
+int is_queued(const byte* rfid) {
+  SERIALDEBUG("is_queued");
+  SERIALHEXDUMP(rfid, 8);
+
+  for (byte* p=queue; p<pos; ) {
+    SERIALDEBUG(String("check pos: ")+(p-queue));
+    SERIALHEXDUMP(p,8);
+    if (p[8]&128) { // SHELF IGNORE
+    } else if (memcmp(p, rfid, 8)==0) {
+      return 1;
+    }
+    int len = p[9];
+    SERIALDEBUG(String("skip: 10+")+(len));
+    p+= 10+len;
+  }
+  return 0;
 }
 
 void write_tag() {
