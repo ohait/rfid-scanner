@@ -73,7 +73,7 @@ const char* host() {
   return _host;
 }
 
-const char* hhost() {
+const char* hhost() { // host name sent in headers, overriding hostname used to connect
   //if (WiFi.SSID().equals("hovedbib")) return "foo";
   return host();
 }
