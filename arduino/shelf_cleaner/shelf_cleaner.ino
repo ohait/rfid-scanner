@@ -369,13 +369,17 @@ void send_queue() {
     SERIALDEBUG("READ");
     // blocking now
     String cmd = client.readStringUntil('\n');
+    SERIALDEBUG(cmd);
   
     while(client.available()) {
       String line = client.readStringUntil('\n');
+      SERIALDEBUG(line);
       if (line.length()<2) break;
     }
 
+    SERIALDEBUG("MSG: ");
     String msg = client.readStringUntil('\n');
+    SERIALDEBUG(msg);
 
     if (msg.equals("WRT")) {
       toneWAIT();
