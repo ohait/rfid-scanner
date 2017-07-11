@@ -466,7 +466,15 @@ void send_queue() {
       SERIALDEBUG("Waiting for connection");
       return;
     }
+    int rssi = WiFi.RSSI();
+    rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
+    if (rssi < 10) {
+        SERIALDEBUG("Connection is poor");
+        return;
+    }
     int len = pos-queue;
+    display.drawLine(127,31,127,31,WHITE);
+    display.display();
     SERIALDEBUG("Sending "+len+" bytes");
 
     //if (!client.connect(host, port)) {
