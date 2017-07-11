@@ -501,7 +501,7 @@ void send_queue() {
     _queue[1] = 0x42;
     memcpy(_queue+2, mac, 6); // device mac address
     memcpy(_queue+8, shelf, 32); // rfid tag id
-    //Serial.println("send"); serialhexdump(_queue, 40+len);
+    //Serial.println("send"); SERIALHEXDUMP(_queue, 40+len);
     client.write((const byte*)_queue, 40+len);
     SERIALDEBUG("request sent");
     pos = queue;
