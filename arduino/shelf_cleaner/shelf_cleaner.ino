@@ -387,13 +387,13 @@ void send_queue() {
       SERIALDEBUG("RFID WRITE len: "+len);
       memset(wid, 0, 256);
       client.read(wid, len);
-      serialhexdump(wid, len);
+      SERIALHEXDUMP(wid, len);
                              // 0x00    0C    00    5F  E3 DB CF 19 00 00 07 E0  chk: 5A
       byte reset_to_ready[] = { 0x00, 0x0C, 0x00, 0x5F, 1, 2, 3, 4, 5, 6, 7, 8 };
       memcpy(reset_to_ready+4, wid, 8);
-      serialhexdump(reset_to_ready, 12);
+      SERIALHEXDUMP(reset_to_ready, 12);
       int l = rfid_req(reset_to_ready, out);
-      serialhexdump(out, l);
+      SERIALHEXDUMP(out, l);
     }
     else if (msg.equals("READ")) {
       toneTock();
@@ -404,9 +404,9 @@ void send_queue() {
 
       byte reset_to_ready[] = { 0x00, 0x0C, 0x00, 0x5F, 1,2,3,4,5,6,7,8 };
       memcpy(reset_to_ready+4, rid, 8);
-      serialhexdump(reset_to_ready, 12);
+      SERIALHEXDUMP(reset_to_ready, 12);
       int l = rfid_req(reset_to_ready, out);
-      serialhexdump(out, l);
+      SERIALHEXDUMP(out, l);
     }
     else if (msg.equals("NOOP")) {
       String barcode = client.readStringUntil('\n');
