@@ -567,12 +567,12 @@ void toneNO() {
 }
 
 void toneTick() {
-  tone(13, 12000); delay(30);
+  tone(13, 8000); delay(30);
   noTone(13);
 }
 
 void toneTock() {
-  tone(13, 8000); delay(20);
+  tone(13, 6000); delay(25);
   noTone(13);
 }
 
