@@ -487,7 +487,7 @@ void send_queue() {
       display.setTextColor(WHITE);
       display.println("server conn fail");
       display.display();
-      delay(30*1000);
+      delay(5*1000);
       return;
     }
     //Serial.println(String("Sending data ")+millis());
