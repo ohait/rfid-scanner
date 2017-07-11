@@ -25,7 +25,15 @@
  * TODO: use OLED FeatherWing, will be I2C on 4/5 (SDA/SCL)
  */
 
-#define SERIALDEBUG(line) /*Serial.println(String("")+millis()+" "+line); //*/
+//#define DEBUG
+// fancy debug on serial port
+#ifdef DEBUG
+#define SERIALDEBUG(line) Serial.println(String("")+millis()+" "+line); //*/
+#define SERIALHEXDUMP(out, len) serialhexdump(out, len); //*/
+#else
+#define SERIALDEBUG(line) //*/
+#define SERIALHEXDUMP(out, len) //*/
+#endif
 
 #include <ESP8266WiFi.h>
 WiFiClient client;
