@@ -491,7 +491,7 @@ void send_queue() {
       return;
     }
     //Serial.println(String("Sending data ")+millis());
-    client.print(String("POST ") + url() + " HTTP/1.1\r\n" +
+    client.print(String("POST ") + url() + " HTTP/1.0\r\n" +
                  "Host: " + hhost() + "\r\n" + 
                  "Content-Length: "+ (40+len) +"\r\n" +
                  "Connection: close\r\n\r\n");
