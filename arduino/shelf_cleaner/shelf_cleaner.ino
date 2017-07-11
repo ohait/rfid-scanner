@@ -210,7 +210,7 @@ void loop() {
       return;
     }
 
-    Serial.println("RFID: "); hex2str(out+5, 8); Serial.println();
+    Serial.print("RFID: "); hex2str(out+5, 8); Serial.println();
 
     // should I read the tag blocks?
     int must_read = scan_mode;
