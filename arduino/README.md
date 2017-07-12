@@ -9,4 +9,3 @@
 ## TODO
 - move the reader module implementation to a separate file, maybe make a library?
 - separate the OLED specific code from the generic functionality to allow different displays to be used
-- simplify the wifi code to be less blocking and easier to read
