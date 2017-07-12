@@ -477,9 +477,7 @@ void _send_queue() {
         SERIALDEBUG("Connection is poor");
         return;
     }
-    int len = pos-queue;
-    display.drawLine(127,31,127,31,WHITE);
-    display.display();
+    int len = pos-_queue;
     SERIALDEBUG("Sending "+len+" bytes");
 
     //if (!client.connect(host, port)) {
@@ -498,7 +496,7 @@ void _send_queue() {
     //Serial.println(String("Sending data ")+millis());
     client.print(String("POST ") + url() + " HTTP/1.0\r\n" +
                  "Host: " + hhost() + "\r\n" + 
-                 "Content-Length: "+ (40+len) +"\r\n" +
+                 "Content-Length: "+ (pos-_queue) +"\r\n" +
                  "Connection: close\r\n\r\n");
 
     // HEAD
@@ -507,7 +505,15 @@ void _send_queue() {
     memcpy(_queue+2, mac, 6); // device mac address
     memcpy(_queue+8, shelf, 32); // rfid tag id
     //Serial.println("send"); SERIALHEXDUMP(_queue, 40+len);
-    client.write((const byte*)_queue, 40+len);
+
+    byte* wp = _queue;
+    while(wp < pos) {
+      int w = client.write((const byte*)wp, pos-wp);
+      SERIALDEBUG("client.write() => "+w);
+      if (w<1) break;
+      wp += w;
+    }
+
     SERIALDEBUG("request sent");
     pos = queue;
     client_work = 1;
