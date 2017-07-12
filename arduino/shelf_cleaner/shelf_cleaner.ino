@@ -94,6 +94,7 @@ byte mac[6];
 // QUEUE of tags found, ready to send
 byte* _queue = (byte*)malloc(QUEUE_SIZE+40);
 byte* queue = _queue+40;
+int queue_count = 0;
 byte* pos = queue;
 
 // buffer for IO
@@ -192,7 +193,7 @@ void loop() {
     } else {
       display.println(String("OFFLINE "));
     }
-    display.println(String("queue: ")+((pos-queue)/40)+"/"+(QUEUE_SIZE/40));
+    display.println(String("")+queue_count+" queued ("+(100*(pos-queue)/QUEUE_SIZE)+"%)");
     display.display();
     display_level = 0;
   }
@@ -226,6 +227,7 @@ void loop() {
       must_read = 0;
     }
     if (must_read) {
+      queue_count++;
       memcpy(pos, out+5, 8); // rfid tag id
       pos[8] = 0; // flags TODO if button, send check-in
       pos += 9;
@@ -258,6 +260,7 @@ void loop() {
       }
     } 
     else { // only the tag id will be sent
+      queue_count++;
       memcpy(pos, out+5, 8); // rfid tag id
       pos[8] = 0; // flags
       pos[9] = 0; // length
@@ -516,6 +519,7 @@ void _send_queue() {
 
     SERIALDEBUG("request sent");
     pos = queue;
+    queue_count = 0;
     client_work = 1;
   }
   else {
