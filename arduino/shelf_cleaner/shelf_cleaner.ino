@@ -358,6 +358,12 @@ int wifi_connect() {
 }
 
 void send_queue() {
+  tone(13, 20);
+  _send_queue();
+  noTone(13);
+}
+
+void _send_queue() {
   long t0 = millis();
   if (client.connected()) {
     // don't block unless there is the first byte
