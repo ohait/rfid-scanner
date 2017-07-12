@@ -108,9 +108,7 @@ byte* rid = (byte*)malloc(8*TAG_READ_SIZE);
 char* shelf = (char*)malloc(32);
 long shelf_expire = 0;
 
-volatile int scan_mode = 1;
 void btnA() {
-  scan_mode = !scan_mode;
   shelf_expire = 1;
 }
 
@@ -194,7 +192,7 @@ void loop() {
     } else {
       display.println(String("OFFLINE "));
     }
-    display.println(String("queue: ")+((pos-queue)/40)+"/"+(QUEUE_SIZE/40)+" "+(scan_mode?"NORM":"FAST"));
+    display.println(String("queue: ")+((pos-queue)/40)+"/"+(QUEUE_SIZE/40));
     display.display();
     display_level = 0;
   }
@@ -213,7 +211,7 @@ void loop() {
     Serial.print("RFID: "); hex2str(out+5, 8); Serial.println();
 
     // should I read the tag blocks?
-    int must_read = scan_mode;
+    int must_read = 1;
     if (WiFi.status() != WL_CONNECTED) must_read++;
     if (!must_read) {
       for (int i=0; i<TAG_READ_SIZE; i++) {
