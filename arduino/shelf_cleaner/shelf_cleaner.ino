@@ -351,10 +351,16 @@ int wifi_connect() {
     Serial.println(String("available ")+ssid);
     const char* pwd = ssid_pwd(ssid.c_str());
     if (pwd) {
-      Serial.println(String("Connecting to: ")+ssid);
-      WiFi.begin(ssid.c_str(), pwd);
-      wifi_timeout = millis() + 1000*20;
-      return 0;
+      int rssi = WiFi.RSSI(i);
+      rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
+      if (rssi>5) {
+        Serial.println(String("Connecting to: ")+ssid);
+        WiFi.begin(ssid.c_str(), pwd);
+        wifi_timeout = millis() + 1000*20;
+        return 0;
+      } else {
+        Serial.println(String("Weak ")+ssid+", skipping");
+      }
     }
   }
   Serial.println("no valid networks");  
