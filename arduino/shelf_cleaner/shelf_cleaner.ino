@@ -286,18 +286,19 @@ void loop() {
 }
 
 int is_queued(const byte* rfid) {
-  SERIALDEBUG("is_queued");
-  SERIALHEXDUMP(rfid, 8);
+  //SERIALDEBUG("is_queued");
+  //SERIALHEXDUMP(rfid, 8);
 
   for (byte* p=queue; p<pos; ) {
-    SERIALDEBUG(String("check pos: ")+(p-queue));
-    SERIALHEXDUMP(p,8);
+    //SERIALDEBUG(String("check pos: ")+(p-queue));
+    //SERIALHEXDUMP(p,8);
     if (p[8]&128) { // SHELF IGNORE
     } else if (memcmp(p, rfid, 8)==0) {
+      SERIALDEBUG("is_queued");
       return 1;
     }
     int len = p[9];
-    SERIALDEBUG(String("skip: 10+")+(len));
+    //SERIALDEBUG(String("skip: 10+")+(len));
     p+= 10+len;
   }
   return 0;
