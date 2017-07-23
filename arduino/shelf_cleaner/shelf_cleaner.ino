@@ -25,7 +25,15 @@
  * TODO: use OLED FeatherWing, will be I2C on 4/5 (SDA/SCL)
  */
 
-#define SERIALDEBUG(line) /*Serial.println(String("")+millis()+" "+line); //*/
+//#define DEBUG
+// fancy debug on serial port
+#ifdef DEBUG
+#define SERIALDEBUG(line) Serial.println(String("")+millis()+" "+line); //*/
+#define SERIALHEXDUMP(out, len) serialhexdump(out, len); //*/
+#else
+#define SERIALDEBUG(line) //*/
+#define SERIALHEXDUMP(out, len) //*/
+#endif
 
 #include <ESP8266WiFi.h>
 WiFiClient client;
@@ -61,18 +69,17 @@ int   _port     = 80;
 char* _url      = "/arduino/rfid/";
 
 const char* host() {
-  //if (WiFi.SSID().equals("hovedbib")) return "171.23.3.41";
-  if (WiFi.SSID().equals("hovedbib")) return "192.168.2.14";
+  if (WiFi.SSID().equals("hovedbib")) return HOVEDBIB_HOST;
   return _host;
 }
 
-const char* hhost() {
-  //if (WiFi.SSID().equals("hovedbib")) return "rfidscanner.ssl.deichman.no";
+const char* hhost() { // host name sent in headers, overriding hostname used to connect
+  //if (WiFi.SSID().equals("hovedbib")) return "foo";
   return host();
 }
 
 int port() {
-  if (WiFi.SSID().equals("hovedbib")) return 5500;
+  //if (WiFi.SSID().equals("hovedbib")) return 80;
   return _port;
 }
 
@@ -82,11 +89,12 @@ const char* url() {
 
 
 byte mac[6];
- 
-#define QUEUE_SIZE (40*200)
+
+#define QUEUE_SIZE (40*500)
 // QUEUE of tags found, ready to send
 byte* _queue = (byte*)malloc(QUEUE_SIZE+40);
 byte* queue = _queue+40;
+int queue_count = 0;
 byte* pos = queue;
 
 // buffer for IO
@@ -101,9 +109,7 @@ byte* rid = (byte*)malloc(8*TAG_READ_SIZE);
 char* shelf = (char*)malloc(32);
 long shelf_expire = 0;
 
-volatile int scan_mode = 1;
 void btnA() {
-  scan_mode = !scan_mode;
   shelf_expire = 1;
 }
 
@@ -187,7 +193,7 @@ void loop() {
     } else {
       display.println(String("OFFLINE "));
     }
-    display.println(String("queue: ")+((pos-queue)/40)+"/"+(QUEUE_SIZE/40)+" "+(scan_mode?"NORM":"FAST"));
+    display.println(String("")+queue_count+" queued ("+(100*(pos-queue)/QUEUE_SIZE)+"%)");
     display.display();
     display_level = 0;
   }
@@ -203,10 +209,10 @@ void loop() {
       return;
     }
 
-    Serial.println("RFID: "); hex2str(out+5, 8); Serial.println();
+    Serial.print("RFID: "); hex2str(out+5, 8); Serial.println();
 
     // should I read the tag blocks?
-    int must_read = scan_mode;
+    int must_read = 1;
     if (WiFi.status() != WL_CONNECTED) must_read++;
     if (!must_read) {
       for (int i=0; i<TAG_READ_SIZE; i++) {
@@ -217,39 +223,48 @@ void loop() {
         }
       }
     }
+    if (is_queued(out+5)) {
+      must_read = 0;
+    }
     if (must_read) {
+      queue_count++;
       memcpy(pos, out+5, 8); // rfid tag id
+      pos[8] = 0; // flags TODO if button, send check-in
+      pos += 9;
       int len = rfid_req(read_block, out);
-      serialhexdump(out, len);
-      if (len<128) {
-        pos[8] = len-4;
-        memcpy(pos+9, out+4, len-4); // skip first 4 bytes (len+frame+cmd)
-        pos += 9+len-4;
-        
-        if (memcmp(out+4, "SHELF#", 6)==0) {
-          memcpy(shelf, out+4+6, 32-6);
-          shelf_expire = millis() + 1000*60;
-          // TODO fetch more data, and search for SSID/PWD
-          toneOK();
-        }
-        else {
-          if (shelf_expire) {
-            shelf_expire = millis() + 1000*60;
-            toneTick();
-          } else {
-            toneTock();
-          }
-        }
+      //SERIALHEXDUMP(out, len);
+
+      if (len>128) { // IGNORE
+      } else if (len<4) { // IGNORE
+      } else if (memcmp(out+4, "SHELF#", 6)==0) {
+        pos[-1] = 128; // raise shelf flag
+        pos[0] = len-4; pos++;
+        memcpy(pos, out+4, len-4); // skip first 4 bytes (len+frame+cmd)
+        pos += len-4;
+
+        memcpy(shelf, out+4+6, 32-6);
+        shelf_expire = millis() + 1000*60;
+        // TODO fetch more data, and search for SSID/PWD
+        toneOK();
       }
       else {
-        Serial.println(String("Expected less data, got: ")+len);
-        serialhexdump(out, len);
+        pos[0] = len-4; pos++;
+        memcpy(pos, out+4, len-4); // skip first 4 bytes (len+frame+cmd)
+        pos += len-4;
+        if (shelf_expire) {
+          shelf_expire = millis() + 1000*60;
+          toneTick();
+        } else {
+          toneTock();
+        }
       }
     } 
     else { // only the tag id will be sent
+      queue_count++;
       memcpy(pos, out+5, 8); // rfid tag id
-      pos[8] = 0;
-      pos += 9;
+      pos[8] = 0; // flags
+      pos[9] = 0; // length
+      pos += 10;
       toneTick();
     }
     // tell the CURRENT_TAG to stay quiet (until it exits the field)
@@ -271,6 +286,25 @@ void loop() {
 //  }
 
   send_queue(); // deque
+}
+
+int is_queued(const byte* rfid) {
+  //SERIALDEBUG("is_queued");
+  //SERIALHEXDUMP(rfid, 8);
+
+  for (byte* p=queue; p<pos; ) {
+    //SERIALDEBUG(String("check pos: ")+(p-queue));
+    //SERIALHEXDUMP(p,8);
+    if (p[8]&128) { // SHELF IGNORE
+    } else if (memcmp(p, rfid, 8)==0) {
+      SERIALDEBUG("is_queued");
+      return 1;
+    }
+    int len = p[9];
+    //SERIALDEBUG(String("skip: 10+")+(len));
+    p+= 10+len;
+  }
+  return 0;
 }
 
 void write_tag() {
@@ -317,16 +351,28 @@ int wifi_connect() {
     Serial.println(String("available ")+ssid);
     const char* pwd = ssid_pwd(ssid.c_str());
     if (pwd) {
-      Serial.println(String("Connecting to: ")+ssid);
-      WiFi.begin(ssid.c_str(), pwd);
-      wifi_timeout = millis() + 1000*20;
-      return 0;
+      int rssi = WiFi.RSSI(i);
+      rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
+      if (rssi>5) {
+        Serial.println(String("Connecting to: ")+ssid);
+        WiFi.begin(ssid.c_str(), pwd);
+        wifi_timeout = millis() + 1000*20;
+        return 0;
+      } else {
+        Serial.println(String("Weak ")+ssid+", skipping");
+      }
     }
   }
   Serial.println("no valid networks");  
 }
 
 void send_queue() {
+  tone(13, 20);
+  _send_queue();
+  noTone(13);
+}
+
+void _send_queue() {
   long t0 = millis();
   if (client.connected()) {
     // don't block unless there is the first byte
@@ -337,13 +383,17 @@ void send_queue() {
     SERIALDEBUG("READ");
     // blocking now
     String cmd = client.readStringUntil('\n');
+    SERIALDEBUG(cmd);
   
     while(client.available()) {
       String line = client.readStringUntil('\n');
+      SERIALDEBUG(line);
       if (line.length()<2) break;
     }
 
+    SERIALDEBUG("MSG: ");
     String msg = client.readStringUntil('\n');
+    SERIALDEBUG(msg);
 
     if (msg.equals("WRT")) {
       toneWAIT();
@@ -351,13 +401,13 @@ void send_queue() {
       SERIALDEBUG("RFID WRITE len: "+len);
       memset(wid, 0, 256);
       client.read(wid, len);
-      serialhexdump(wid, len);
+      SERIALHEXDUMP(wid, len);
                              // 0x00    0C    00    5F  E3 DB CF 19 00 00 07 E0  chk: 5A
       byte reset_to_ready[] = { 0x00, 0x0C, 0x00, 0x5F, 1, 2, 3, 4, 5, 6, 7, 8 };
       memcpy(reset_to_ready+4, wid, 8);
-      serialhexdump(reset_to_ready, 12);
+      SERIALHEXDUMP(reset_to_ready, 12);
       int l = rfid_req(reset_to_ready, out);
-      serialhexdump(out, l);
+      SERIALHEXDUMP(out, l);
     }
     else if (msg.equals("READ")) {
       toneTock();
@@ -368,9 +418,9 @@ void send_queue() {
 
       byte reset_to_ready[] = { 0x00, 0x0C, 0x00, 0x5F, 1,2,3,4,5,6,7,8 };
       memcpy(reset_to_ready+4, rid, 8);
-      serialhexdump(reset_to_ready, 12);
+      SERIALHEXDUMP(reset_to_ready, 12);
       int l = rfid_req(reset_to_ready, out);
-      serialhexdump(out, l);
+      SERIALHEXDUMP(out, l);
     }
     else if (msg.equals("NOOP")) {
       String barcode = client.readStringUntil('\n');
@@ -430,7 +480,13 @@ void send_queue() {
       SERIALDEBUG("Waiting for connection");
       return;
     }
-    int len = pos-queue;
+    int rssi = WiFi.RSSI();
+    rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
+    if (rssi < 10) {
+        SERIALDEBUG("Connection is poor");
+        return;
+    }
+    int len = pos-_queue;
     SERIALDEBUG("Sending "+len+" bytes");
 
     //if (!client.connect(host, port)) {
@@ -443,13 +499,13 @@ void send_queue() {
       display.setTextColor(WHITE);
       display.println("server conn fail");
       display.display();
-      delay(30*1000);
+      delay(5*1000);
       return;
     }
     //Serial.println(String("Sending data ")+millis());
-    client.print(String("POST ") + url() + " HTTP/1.1\r\n" +
+    client.print(String("POST ") + url() + " HTTP/1.0\r\n" +
                  "Host: " + hhost() + "\r\n" + 
-                 "Content-Length: "+ (40+len) +"\r\n" +
+                 "Content-Length: "+ (pos-_queue) +"\r\n" +
                  "Connection: close\r\n\r\n");
 
     // HEAD
@@ -457,10 +513,19 @@ void send_queue() {
     _queue[1] = 0x42;
     memcpy(_queue+2, mac, 6); // device mac address
     memcpy(_queue+8, shelf, 32); // rfid tag id
-    //Serial.println("send"); serialhexdump(_queue, 40+len);
-    client.write((const byte*)_queue, 40+len);
+    //Serial.println("send"); SERIALHEXDUMP(_queue, 40+len);
+
+    byte* wp = _queue;
+    while(wp < pos) {
+      int w = client.write((const byte*)wp, pos-wp);
+      SERIALDEBUG("client.write() => "+w);
+      if (w<1) break;
+      wp += w;
+    }
+
     SERIALDEBUG("request sent");
     pos = queue;
+    queue_count = 0;
     client_work = 1;
   }
   else {
@@ -523,12 +588,12 @@ void toneNO() {
 }
 
 void toneTick() {
-  tone(13, 12000); delay(30);
+  tone(13, 8000); delay(30);
   noTone(13);
 }
 
 void toneTock() {
-  tone(13, 8000); delay(20);
+  tone(13, 6000); delay(25);
   noTone(13);
 }
 

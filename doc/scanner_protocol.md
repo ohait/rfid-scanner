@@ -10,6 +10,7 @@ N      shelf data
 
 RECORD:
 8      RFID tag id
+1      flags (bitmask: 1 => checkin)
 1      data length (N)
 N      data
 ```
