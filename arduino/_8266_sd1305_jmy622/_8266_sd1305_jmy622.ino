@@ -6,9 +6,12 @@
 #include <ESP8266WiFi.h>
 WiFiClient client;
 
+
+#include <SoftwareSerial.h>
 #include <jmy6xx.h>;
-//JMY6xx jmy622(&SSerial);
-JMY6xx jmy622(0x50); // 0xA0/0xA1 => 0x50 in arduino world
+SoftwareSerial SSerial(12,14);
+JMY6xx jmy622(&SSerial);
+//JMY6xx jmy622(0x50); // 0xA0/0xA1 => 0x50 in arduino world
 
 Adafruit_SSD1305 display(2);
 
@@ -33,14 +36,15 @@ int scan_count = 0;
 // CURRENT STATE
 int state = 1; // 0 idle, 1 Inventory, 2 Checkin
 
+int wake = 0;
 void checkin() {
+  wake++;
   if (digitalRead(CHECKIN_PIN)==LOW) {
     state = 2;
   } else {
     state = 1;
   }
   idle_expire = millis()+1000*60;
-  expire = 0;
 //  Serial.print("checking() => ");
 //  Serial.println(state);
 }
@@ -50,12 +54,34 @@ void checkin() {
 // UPDATE DISPLAY
 ////////////////////////////////////////////
 
+int wifi_gfx[] = {
+  0,0,
+  3,0,  3,1,  2,2,
+  6,0,  6,1,  6,2,  5,3,  5,4,
+  9,0,  9,1,  9,2,  8,3,  8,4,  7,5,
+};
+
+int display_cycle = 0;
 void update_display() {
   if (millis() < display_expire) return;
   display_prio = 0;
 //  expire = millis()+1000;
 
+  yield();
   display.clearDisplay();
+
+  display_cycle++;
+  int wifi = wifi_connect()*14/100;
+  if (wifi>13) wifi=13;
+  if (wifi<0) wifi=0;  
+  display_cycle %= wifi+2;
+  int wx = 127;
+  int wy = 0;
+  for (int i=0; i<display_cycle; i++) {
+    display.drawPixel(wx-wifi_gfx[i*2], wy+wifi_gfx[i*2+1], WHITE);
+  }
+  yield();
+  
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setFont();
@@ -68,10 +94,19 @@ void update_display() {
     display.println(String("State: ")+state);
   }
   
-  display.setFont(&Picopixel);
-  display.setCursor(0,30);
-  int wifi = wifi_connect();
-  display.println(String("")+" WiFi: "+wifi+"%"+" shelf: "+shelf);
+
+  if (shelf[0]) {
+    display.setFont(&Picopixel);
+    display.setCursor(0,30);
+    display.println(String("")+"shelf: "+shelf);
+  }
+
+/*
+  if (wifi>99) wifi=99;
+  display.setCursor(100,30);
+  display.println(String("")+"WiFi:"+wifi+"%");
+  */
+  yield();
   display.display();
 }
 
@@ -82,6 +117,7 @@ void error(String msg) {
   toneKO();
   Serial.println(msg);
 
+  yield();
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -89,6 +125,7 @@ void error(String msg) {
   display.setCursor(0,0);
   display.println(msg);
   display.setFont(&Picopixel);
+  yield();
   display.display();
 }
 
@@ -99,6 +136,7 @@ void pick(String cn, String barcode, String author, String title) {
   tonePICK();
   Serial.println(String("PICK ")+barcode);
 
+  yield();
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -107,7 +145,7 @@ void pick(String cn, String barcode, String author, String title) {
   display.println("PICK "+barcode);
   display.println(author);
   display.println(title);
-  
+  yield();
   display.display();
 }
 
@@ -116,12 +154,14 @@ void info(String s) {
   display_prio = 1;
   display_expire = millis()+1000*20;
 
+  yield();
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setFont();
   display.setCursor(0,0);
   display.println(s);
+  yield();
   display.display();
 }
 
@@ -137,6 +177,7 @@ byte* queue_find(const byte* uid) {
   Serial.println();
   
   for(int p=0; p<q_pos;) {
+    yield();
     byte* record = queue+p;
 
     Serial.print("pos: 0x");
@@ -166,6 +207,7 @@ int scan() {
   }
   int ct = 0;
   for(; ct<100; ct++) {
+    yield();
     const byte* uid = jmy622.iso15693_scan();
     
     if (!uid) break;
@@ -227,12 +269,13 @@ int scan() {
 
 void setup() {
   Serial.begin(9600);
-  //Serial.begin(38400);
+  SSerial.begin(19200);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(CHECKIN_PIN, INPUT_PULLUP);
-  //jmy622.debug = 3;
+//  jmy622.debug = 3;
 
   toneOK();
+  delay(100);
   Serial.println("scanning I2C");
   for(int addr=0; addr<127; addr++) {
     delay(10);
@@ -248,7 +291,8 @@ void setup() {
   toneOK();
 
 
-  delay(200);
+  yield();
+  delay(100);
 
   attachInterrupt(digitalPinToInterrupt(CHECKIN_PIN), checkin, CHANGE);
   display.begin();
@@ -256,7 +300,8 @@ void setup() {
   WiFi.mode(WIFI_STA);
 //  WiFi.macAddress(mac);
 
-  delay(200);
+  yield();
+  delay(100);
 
 
   queue = (byte*)malloc(q_size);
@@ -270,7 +315,8 @@ void setup() {
     if (!q) break;
     queue = q; q_size = size;
   }
-  
+
+  yield();
   Serial.println();
   Serial.println(String("INIT... build ")+__DATE__+" "+__TIME__);
   Serial.print(String("queue ")+(q_size/1024)+"Kb (0x"); Serial.print((long)queue, HEX); Serial.println();
@@ -288,27 +334,53 @@ void setup() {
   toneOK();
 }
 
+void sleep() {
+  state = 0;
+  yield();
+  WiFi.mode(WIFI_OFF);
+//  yield();
+//  jmy622.idle();
+  yield();
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setFont();
+  display.setCursor(0,0);
+  display.println("Zzzz....");
+  display.display();
+  yield();
+  delay(1000);
+  yield();
+  display.command(SSD1305_DISPLAYOFF);
+  yield();
+}
+void wake_up() {
+  if (state) return;
+  yield();
+  display.command(SSD1305_DISPLAYON);
+  yield();
+  WiFi.mode(WIFI_STA);
+  yield();
+  idle_expire = millis()+1000*60;
+}
 
 void loop() {
-    
-  if (millis() > idle_expire) {
-    state = 0;
-    idle_expire = millis() + 1000*60; // reset the timer
-
-    display.clearDisplay();
-    display.display();
-
-    jmy622.idle();
+  // IDLE LOOP?
+  if (state==0) {
+    if (wake) {
+      wake_up(); 
+      wake=0;
+    }
+    else {
+      delay(100);
+      return;
+    }
   }
 
-  delay(50);
-
-  if (state==0) {
-    WiFi.mode(WIFI_OFF);
-    delay(500);
+  if (millis() > idle_expire) {
+    sleep();
     return;
   }
-  WiFi.mode(WIFI_STA);
 
   if (scan()) {
     Serial.println("-------------");
@@ -328,21 +400,14 @@ int wifi_connect() {
   }
 
   if (millis()<wifi_timeout) {
-    Serial.println("still connecting...");
     return 0;
   }
 
-  display.clearDisplay();
-  display.setFont();  
-  display.setTextSize(1);
-  display.setCursor(0,0);
-  display.setTextColor(WHITE);
-  display.println("Seaching for WiFi...");
-  Serial.println("Seaching for WiFi...");
-  display.display();
 
+  yield();
   int ct = WiFi.scanNetworks();
   for (int i=0; i<ct; i++) {
+    yield();
     String ssid = WiFi.SSID(i);
     const char* pwd = wifi_pass(ssid.c_str());
     if (!pwd) continue;
@@ -350,25 +415,10 @@ int wifi_connect() {
     rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
     if (rssi<10) continue;
 
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setCursor(0,0);
-    display.setTextColor(WHITE);
-    display.println(String("Found: ")+ssid+" "+rssi+"%");
-    Serial.println(String("Found: ")+ssid+" "+rssi+"%");
-    display.display();
-
     WiFi.begin(ssid.c_str(), pwd);
     wifi_timeout = millis() + 1000*20; // wait 20 seconds before trying another network
     return 0;
   }
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setCursor(0,0);
-  display.setTextColor(WHITE);
-  display.println("No valid wifi networks");
-  Serial.println("No valid wifi networks");
-  display.display();
   wifi_timeout = millis() + 1000*20; // try again in 20 seconds
   return 0;
 }
