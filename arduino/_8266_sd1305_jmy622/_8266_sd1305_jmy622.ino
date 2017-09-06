@@ -71,14 +71,27 @@ void update_display() {
   display.clearDisplay();
 
   display_cycle++;
-  int wifi = wifi_connect()*14/100;
-  if (wifi>13) wifi=13;
-  if (wifi<0) wifi=0;  
-  display_cycle %= wifi+2;
   int wx = 127;
   int wy = 0;
-  for (int i=0; i<display_cycle; i++) {
-    display.drawPixel(wx-wifi_gfx[i*2], wy+wifi_gfx[i*2+1], WHITE);
+
+  if (client.connected()) {
+    display_cycle %=4;
+    if (display_cycle<2) {
+      display.drawLine(wx-4,wy, wx-4,wy+4, WHITE);
+      display.drawLine(wx-5,wy+1,wx-3, wy+1, WHITE);
+    } 
+    if (display_cycle==1 or display_cycle==2) {
+      display.drawLine(wx-1,wy, wx-1,wy+4, WHITE);
+      display.drawLine(wx-2,wy+3,wx-0, wy+3, WHITE);
+    }
+  } else {
+    int wifi = wifi_connect()*14/100;
+    if (wifi>13) wifi=13;
+    if (wifi<0) wifi=0;  
+    display_cycle %= wifi+2;
+    for (int i=0; i<display_cycle; i++) {
+      display.drawPixel(wx-wifi_gfx[i*2], wy+wifi_gfx[i*2+1], WHITE);
+    }
   }
   yield();
   
@@ -166,6 +179,7 @@ void info(String s) {
 }
 
 int read_blocks = 7;
+byte* send_buffer;
 byte* queue;
 int q_size = 1024;
 int q_pos = 0;
@@ -303,18 +317,19 @@ void setup() {
   yield();
   delay(100);
 
-
-  queue = (byte*)malloc(q_size);
-  if (!queue) {
+  send_buffer = (byte*)malloc(q_size);
+  if (!send_buffer) {
     error("Can't allocate minumum queue memory");
     while(1) delay(1000);
   }
   for(;;) {
     int size = q_size*2;
-    byte* q = (byte*)realloc(queue, size);
+    byte* q = (byte*)realloc(send_buffer, size);
     if (!q) break;
-    queue = q; q_size = size;
+    send_buffer = q; q_size = size;
   }
+  queue = send_buffer+10;
+  q_size -= 10;
 
   yield();
   Serial.println();
