@@ -371,8 +371,12 @@ void sleep() {
   yield();
 }
 void wake_up() {
+  toneOK();
   yield();
   display.command(SSD1305_DISPLAYON);
+  display.clearDisplay();
+  display.display();
+  
   yield();
   WiFi.mode(WIFI_STA);
   yield();
