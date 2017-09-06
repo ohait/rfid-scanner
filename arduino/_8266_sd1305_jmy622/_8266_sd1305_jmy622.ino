@@ -6,6 +6,7 @@
 #include <ESP8266WiFi.h>
 WiFiClient client;
 
+#define IDLE_TIME 30
 
 #include <SoftwareSerial.h>
 #include <jmy6xx.h>;
@@ -22,7 +23,7 @@ Adafruit_SSD1305 display(2);
 #include "secrets.h"
 
 // IDLE
-long idle_expire = 1000*60;
+long idle_expire = 1000*IDLE_TIME;
 
 // SHELF
 char shelf[32] = "fake.shelf\0";
@@ -38,13 +39,13 @@ int state = 1; // 0 idle, 1 Inventory, 2 Checkin
 
 int wake = 0;
 void checkin() {
-  wake++;
+  if (state==0) wake=1;
   if (digitalRead(CHECKIN_PIN)==LOW) {
     state = 2;
   } else {
     state = 1;
   }
-  idle_expire = millis()+1000*60;
+  idle_expire = millis()+1000*IDLE_TIME;
 //  Serial.print("checking() => ");
 //  Serial.println(state);
 }
@@ -370,28 +371,25 @@ void sleep() {
   yield();
 }
 void wake_up() {
-  if (state) return;
   yield();
   display.command(SSD1305_DISPLAYON);
   yield();
   WiFi.mode(WIFI_STA);
   yield();
-  idle_expire = millis()+1000*60;
+  idle_expire = millis()+1000*IDLE_TIME;
 }
 
 void loop() {
   // IDLE LOOP?
   if (state==0) {
-    if (wake) {
-      wake_up(); 
-      wake=0;
-    }
-    else {
-      delay(100);
-      return;
-    }
+    delay(100);
+    return;
   }
 
+  if (wake) {
+    wake_up(); 
+    wake=0;
+  }
   if (millis() > idle_expire) {
     sleep();
     return;
@@ -399,7 +397,7 @@ void loop() {
 
   if (scan()) {
     Serial.println("-------------");
-    idle_expire = millis()+1000*60;
+    idle_expire = millis()+1000*IDLE_TIME;
     //pick("123.45 Dew", "03010034815003", "U. N. Owen", "Misterious Title, with subtitle");
   } else {
     update_display();
