@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 WiFiClient client;
+#include <Time.h>
 
 #define IDLE_TIME 30
 
@@ -36,7 +37,7 @@ int scan_count = 0;
 
 // CURRENT STATE
 int state = 1; // 0 idle, 1 Inventory, 2 Checkin
-
+long epoch = 0;
 int wake = 0;
 void checkin() {
   if (state==0) wake=1;
@@ -107,7 +108,6 @@ void update_display() {
   } else {
     display.println(String("State: ")+state);
   }
-  
 
   if (shelf[0]) {
     display.setFont(&Picopixel);
@@ -407,6 +407,7 @@ void loop() {
   } else {
     update_display();
     wifi_recv();
+    wifi_init();
   }
 }
 
@@ -482,6 +483,29 @@ int wifi_send() {
   wifi_timeout = millis()+1000*15; 
 }
 
+int wifi_init() {
+  if (client.connected()) { // already waiting for an answer
+    return 0;
+  }
+  if (wifi_connect()<30) { // poor wifi
+    return 0;
+  }
+  if (millis()<wifi_wait) { // I should wait
+    return 0;
+  }
+  wifi_wait = millis()+1000*60; // antiflood
+  if (!client.connect(host(), port())) {
+    Serial.println(String("client.connect(")+host()+":"+port()+") failed");
+    error("server connection failed");
+    return 0;
+  }
+  Serial.println("/arduino/epoch");
+  client.print(String("GET ") + "/arduino/epoch" + " HTTP/1.0\r\n" +
+               "Host: " + host() + "\r\n" + 
+               "Connection: close\r\n\r\n");
+  wifi_timeout = millis()+1000*15; 
+}
+
 int wifi_recv() {
   if (!client.connected()) return 0;
   if (millis() > wifi_timeout) {
@@ -494,6 +518,7 @@ int wifi_recv() {
   Serial.println("RECV");
 
   String cmd = client.readStringUntil('\n');
+  
   Serial.println(cmd);
   while(client.available()) {
     yield();
@@ -512,7 +537,6 @@ int wifi_recv() {
 //    memset(wid, 0, 256);
 //    client.read(wid, len);
 //    SERIALHEXDUMP(wid, len);
-                           // 0x00    0C    00    5F  E3 DB CF 19 00 00 07 E0  chk: 5A
   }
   else if (msg.equals("NOOP")) {
     String barcode = client.readStringUntil('\n');
@@ -527,10 +551,16 @@ int wifi_recv() {
     String title = client.readStringUntil('\n');
     String cn = client.readStringUntil('\n');
     pick(cn, barcode, author, title);
-  } else {
+  }
+  else if (msg.equals("EPOCH")) {
+    String e = client.readStringUntil('\n');
+    epoch = e.toInt()-millis()/1000;
+  }
+  else {
     Serial.println(String("UNKNOWN CMD: '")+msg+"'");
   }
-
+  client.stop();
+  
   return 1;
 }
 
