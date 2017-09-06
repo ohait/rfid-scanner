@@ -96,7 +96,7 @@ void update_display() {
     }
   }
   yield();
-  
+
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setFont();
@@ -287,6 +287,7 @@ void setup() {
   SSerial.begin(19200);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(CHECKIN_PIN, INPUT_PULLUP);
+  pinMode(A0, INPUT);
 //  jmy622.debug = 3;
 
   toneOK();
@@ -483,6 +484,7 @@ int wifi_send() {
   wifi_timeout = millis()+1000*15; 
 }
 
+long wifi_init_wait = 0;
 int wifi_init() {
   if (client.connected()) { // already waiting for an answer
     return 0;
@@ -490,10 +492,10 @@ int wifi_init() {
   if (wifi_connect()<30) { // poor wifi
     return 0;
   }
-  if (millis()<wifi_wait) { // I should wait
+  if (millis()<wifi_init_wait) { // I should wait
     return 0;
   }
-  wifi_wait = millis()+1000*60; // antiflood
+  wifi_init_wait = millis()+1000*300; // antiflood
   if (!client.connect(host(), port())) {
     Serial.println(String("client.connect(")+host()+":"+port()+") failed");
     error("server connection failed");
