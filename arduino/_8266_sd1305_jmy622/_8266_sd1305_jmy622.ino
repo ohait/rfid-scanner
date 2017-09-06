@@ -348,6 +348,7 @@ void setup() {
 
   jmy622.info();
   toneOK();
+
 }
 
 void sleep() {
@@ -405,6 +406,7 @@ void loop() {
     //pick("123.45 Dew", "03010034815003", "U. N. Owen", "Misterious Title, with subtitle");
   } else {
     update_display();
+    wifi_recv();
   }
 }
 
@@ -438,5 +440,97 @@ int wifi_connect() {
   }
   wifi_timeout = millis() + 1000*20; // try again in 20 seconds
   return 0;
+}
+
+long wifi_wait = 0;
+int wifi_send() {
+  if (!q_pos) return 0; // nothing to do
+  if (client.connected()) { // already waiting for an answer
+    return 0;
+  }
+  if (wifi_connect()<30) { // poor wifi
+    return 0;
+  }
+  if (millis()<wifi_wait) { // I should wait
+    return 0;
+  }
+  wifi_wait = millis()+1000*1; // antiflood
+
+  int len = q_pos+8;
+  if (!client.connect(host(), port())) {
+    Serial.println(String("client.connect(")+host()+":"+port()+") failed");
+    error("server connection failed");
+    return 0;
+  }
+  //Serial.println(String("Sending data ")+millis());
+  client.print(String("POST ") + url() + " HTTP/1.0\r\n" +
+               "Host: " + host() + "\r\n" + 
+               "Content-Length: "+ (len) +"\r\n" +
+               "Connection: close\r\n\r\n");
+
+  int sent = 0;
+  while(sent < len) {
+    int w = client.write((const byte*)(send_buffer+sent), len-sent);
+    if (w<1) {
+      error("server send failed");
+      wifi_wait = millis()+1000*15; // 15 seconds wait after errors
+      return 0;
+    }
+    sent += w;
+  }
+  Serial.print("sent "); Serial.print(sent); Serial.println(" bytes");
+  wifi_timeout = millis()+1000*15; 
+}
+
+int wifi_recv() {
+  if (!client.connected()) return 0;
+  if (millis() > wifi_timeout) {
+    error("timeout waiting from server");
+    client.stop();
+    return 0;
+  }
+  if (!client.available()) return 0;
+
+  Serial.println("RECV");
+
+  String cmd = client.readStringUntil('\n');
+  Serial.println(cmd);
+  while(client.available()) {
+    yield();
+    String line = client.readStringUntil('\n');
+    if (line.length()<2) break;
+    Serial.println(line);
+  }
+  Serial.println("..");
+
+  String msg = client.readStringUntil('\n');
+  Serial.println(msg);
+
+  if (msg.equals("WRT")) {
+    toneWAIT();
+    int len = client.readStringUntil('\n').toInt();
+//    memset(wid, 0, 256);
+//    client.read(wid, len);
+//    SERIALHEXDUMP(wid, len);
+                           // 0x00    0C    00    5F  E3 DB CF 19 00 00 07 E0  chk: 5A
+  }
+  else if (msg.equals("NOOP")) {
+    String barcode = client.readStringUntil('\n');
+    String author = client.readStringUntil('\n');
+    String title = client.readStringUntil('\n');
+    String cn = client.readStringUntil('\n');
+    info(barcode+"\n"+author+"\n"+title);
+  }
+  else if (msg.equals("PICK")) {
+    String barcode = client.readStringUntil('\n');
+    String author = client.readStringUntil('\n');
+    String title = client.readStringUntil('\n');
+    String cn = client.readStringUntil('\n');
+    pick(cn, barcode, author, title);
+  } else {
+    Serial.println(String("UNKNOWN CMD: '")+msg+"'");
+  }
+
+  return 1;
 }
 
