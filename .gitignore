@@ -1,3 +1,4 @@
 
 arduino/shelf_cleaner/secrets.h
 server/Secrets.pm
+arduino/_8266_sd1305_jmy622/secrets.h
