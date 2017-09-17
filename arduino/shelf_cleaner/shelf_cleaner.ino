@@ -69,7 +69,7 @@ int   _port     = 80;
 char* _url      = "/arduino/rfid/";
 
 const char* host() {
-  if (WiFi.SSID().equals("hovedbib")) return HOVEDBIB_HOST;
+//  if (WiFi.SSID().equals("hovedbib")) return HOVEDBIB_HOST;
   return _host;
 }
 

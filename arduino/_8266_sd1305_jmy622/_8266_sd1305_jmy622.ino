@@ -7,7 +7,7 @@
 WiFiClient client;
 #include <Time.h>
 
-#define IDLE_TIME 30
+#define IDLE_TIME 180
 
 #include <SoftwareSerial.h>
 #include <jmy6xx.h>;
@@ -27,7 +27,7 @@ Adafruit_SSD1305 display(2);
 long idle_expire = 1000*IDLE_TIME;
 
 // SHELF
-char shelf[32] = "fake.shelf\0";
+char shelf[32] = "\0";
 long shelf_expire = 0;
 
 // DISPLAY MESSAGES
@@ -109,7 +109,7 @@ void update_display() {
     display.println(String("State: ")+state);
   }
 
-  if (shelf[0]) {
+  if (shelf[0]) { // first byte is not \0
     display.setFont(&Picopixel);
     display.setCursor(0,30);
     display.println(String("")+"shelf: "+shelf);
@@ -187,31 +187,29 @@ int q_pos = 0;
 int record_size = 8+2+read_blocks*4+2; // align 
 
 byte* queue_find(const byte* uid) {
-  Serial.print("queue search ");
-  jmy622.hexprint(uid, 8);
-  Serial.println();
+  //Serial.print("queue search "); jmy622.hexprint(uid, 8); Serial.println();
   
   for(int p=0; p<q_pos;) {
     yield();
     byte* record = queue+p;
 
-    Serial.print("pos: 0x");
-    if (p<16) Serial.print("000");
-    else if (p<256) Serial.print("00");
-    else if (p<16*256) Serial.print("0");
-    Serial.print(p, HEX);
-    Serial.print(": ");
-    jmy622.hexprint(record, 8);
+//    Serial.print("pos: 0x");
+//    if (p<16) Serial.print("000");
+//    else if (p<256) Serial.print("00");
+//    else if (p<16*256) Serial.print("0");
+//    Serial.print(p, HEX);
+//    Serial.print(": ");
+//    jmy622.hexprint(record, 8);
     
     if (memcmp(uid, record, 8)) {
-      Serial.println(" NO");
+      //Serial.println(" NO");
       p += record_size;
     } else {
-      Serial.println(" FOUND");
+      //Serial.println(" FOUND");
       return record;
     }
   }
-  Serial.println("Not in queue");
+//  Serial.println("Not in queue");
   return NULL;
 }
 
@@ -226,6 +224,13 @@ int scan() {
     const byte* uid = jmy622.iso15693_scan();
     
     if (!uid) break;
+
+    const byte* data = jmy622.iso15693_read(0,read_blocks); // read blocks 0..7
+
+    jmy622.hexprint(uid, 8); Serial.print(" => "); Serial.println((long)data, HEX);
+    
+    if (!data) break;
+    if (!jmy622.iso15693_quiet()) break;
 
     byte* record = queue_find(uid);
     if (record) {
@@ -242,42 +247,29 @@ int scan() {
       scan_count++;
     }
 
-    const byte* data = jmy622.iso15693_read(0,read_blocks); // read blocks 0..7
-
-    jmy622.hexprint(uid, 8); 
-    Serial.print(" => ");
-    Serial.println((long)data, HEX);
-    
-    if (!data) break;
-    
-    
     record[8] = 0; // flag TODO checkin button
     record[9] = read_blocks*4+2; // align
+    record[10] = 0x42;
+    record[11] = 0x42;
     
-    memcpy(record+10, data, record_size-10);
-      
-    jmy622.iso15693_quiet();
-    
-    Serial.print("found tag: ");
-    jmy622.hexprint(record, 8);
-    Serial.println();
-    jmy622.hexdump(record+10, 7*4); // 4 bytes per block
+    memcpy(record+12, data, record_size-12);
+
     if (state==2) {
        toneTock();
     } else {
        toneTick();
     }
+    
+    Serial.println("record: ");
+    jmy622.hexdump(record, record_size);
 
-    String s = String("");
-    for(int i=0; i<7*4; i++) {
-      char c = (char)record[i];
-      if (c>=32 and c<127) {
-        s = s+c;
-      } else {
-        s = s+'.';
-      }
+    for (int i=10; i<record_size-10; i++) {
+      hexdump(record+i, strlen("SHELF#"));
+      if (memcmp((char*)(record+i), "SHELF#", strlen("SHELF#"))) continue;
+      i+= strlen("SHELF#");
+      strncpy(shelf, (char*)(record+i), 32);
+      Serial.println(shelf);
     }
-    info(s);
   }
   return ct;
 }
@@ -291,24 +283,7 @@ void setup() {
 //  jmy622.debug = 3;
 
   toneOK();
-  delay(100);
-  Serial.println("scanning I2C");
-  for(int addr=0; addr<127; addr++) {
-    delay(10);
-    Wire.beginTransmission(addr);
-    int error = Wire.endTransmission();
-    if (error==0) {
-      Serial.print("device found at 0x");
-      toneTick();
-      Serial.println(addr, HEX);
-    }
-  }
-  Serial.println("scan done");
-  toneOK();
-
-
-  yield();
-  delay(100);
+  delay(200);
 
   attachInterrupt(digitalPinToInterrupt(CHECKIN_PIN), checkin, CHANGE);
   display.begin();
@@ -371,6 +346,7 @@ void sleep() {
   yield();
   display.command(SSD1305_DISPLAYOFF);
   yield();
+  shelf[0] = '\0';
 }
 void wake_up() {
   toneOK();
@@ -423,7 +399,6 @@ int wifi_connect() {
   if (millis()<wifi_timeout) {
     return 0;
   }
-
 
   yield();
   int ct = WiFi.scanNetworks();
