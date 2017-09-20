@@ -11,7 +11,9 @@ WiFiClient client;
 
 #include <SoftwareSerial.h>
 #include <jmy6xx.h>;
-SoftwareSerial SSerial(12,14);
+#define RFID_RX 12
+#define RFID_TX 14
+SoftwareSerial SSerial(RFID_RX,RFID_TX);
 JMY6xx jmy622(&SSerial);
 //JMY6xx jmy622(0x50); // 0xA0/0xA1 => 0x50 in arduino world
 
