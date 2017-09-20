@@ -4,8 +4,6 @@ HEADER:
 Bytes  Desc
 2      0x4242 (a protocol number)
 6      MAC ADDRESS of the rfid device
-1      shelf data length (N)
-N      shelf data
 [one or more RECORDs]
 
 RECORD:
