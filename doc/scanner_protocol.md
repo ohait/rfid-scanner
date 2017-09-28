@@ -55,3 +55,24 @@ length($rfid+$data)\n
 $rfid+$data
 ```
 The scanner need to overwrite the tag with the given RFID id, with $data. (the $rfid is 8 bytes and is the rfid id that need to be written, while $data is the data to be written)
+
+## IMG
+```
+IMG\n
+base64 128 chars\n
+base64 128 chars\n
+base64 128 chars\n
+base64 128 chars\n
+base64 128 chars\n
+base64 128 chars\n
+```
+
+display a custom image on the display, top left bixel is the lowest bit of the first byte of the first line.
+
+The main reason for doing this is to use unicode letters, which are too cumbersome to upload as a font on some devices.
+
+the size is 128x32
+
+## PIMG
+
+same as IMG, but higher display priority and expire, and it will trigger a sound like PICK
