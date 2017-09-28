@@ -15,6 +15,14 @@ N      data
 ```
 After the scanner found 1 or more RFID tags, it will send a request to the server with a header and one or more records.
 
+records might contains rfid tags related to items, or shelf tags.
+
+each tags following a shelf tag belongs to that shelf, and not the initial shelf value.
+
+for a shelf, the data will contains `SHELF#shelf.name.here`
+
+# RESPONSE
+
 The server might respond with:
 
 ## NOOP
