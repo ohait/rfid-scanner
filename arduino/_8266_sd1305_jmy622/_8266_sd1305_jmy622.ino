@@ -5,9 +5,8 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 WiFiClient client;
-#include <Time.h>
 
-#define IDLE_TIME 180
+#define IDLE_TIME 300
 
 #include <SoftwareSerial.h>
 #include <jmy6xx.h>;
@@ -28,27 +27,44 @@ Adafruit_SSD1305 display(2);
 // IDLE
 long idle_expire = 1000*IDLE_TIME;
 
-// SHELF
-char shelf[32] = "\0";
+// GLOBAL VARS
+int start_block = 0;
+int read_blocks = 9;
+byte* send_buffer;
+byte* queue;
+int q_size = 24*1024;
+int q_pos = 0;
+int record_size = 8+2+read_blocks*4; // align
+char shelf[32];
 long shelf_expire = 0;
 
 // DISPLAY MESSAGES
 int display_prio = 0;
 long display_expire = 0;
-int scan_count = 0;
+
+int count_total = 0;
+int count_from_idle = 0;
+int count_shelf = 0;
 
 // CURRENT STATE
 int state = 1; // 0 idle, 1 Inventory, 2 Checkin
 long epoch = 0;
 int wake = 0;
+long prev_checkin = 0;
 void checkin() {
+  long ago = millis() - prev_checkin;
+  prev_checkin = millis();
   if (state==0) wake=1;
   if (digitalRead(CHECKIN_PIN)==LOW) {
     state = 2;
   } else {
     state = 1;
+    if (ago<500) {
+      shelf[0] = '\0'; // a quick press will reset the shelf
+    }
   }
-  idle_expire = millis()+1000*IDLE_TIME;
+  idle_expire = millis()+1000*IDLE_TIME; // extends the idle time
+  display_expire = 0; // clear the display
 //  Serial.print("checking() => ");
 //  Serial.println(state);
 }
@@ -111,6 +127,34 @@ void update_display() {
     display.println(String("State: ")+state);
   }
 
+  yield();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setFont(&Picopixel);
+  display.setCursor(0,14);
+  display.print(count_total);
+  display.print(" tags scanned");
+  if (shelf[0]) {
+    display.print(", ");
+    display.print(count_shelf);
+    display.print(" tags on shelf");
+  }
+  else if (count_from_idle != count_total) {
+    display.print(", ");
+    display.print(count_from_idle);
+    display.print(" since idle");
+  }
+
+  yield();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setFont(&Picopixel);
+  display.setCursor(0,22);
+  int queue_full = q_pos *100 /q_size;
+  display.print("buffer: ");
+  display.print(queue_full);
+  display.print("%");
+
   if (shelf[0]) { // first byte is not \0
     display.setFont(&Picopixel);
     display.setCursor(0,30);
@@ -125,6 +169,7 @@ void update_display() {
   yield();
   display.display();
 }
+
 
 void error(String msg) {
   if (display_prio >= 9) return;
@@ -148,9 +193,9 @@ void error(String msg) {
 void pick(String cn, String barcode, String author, String title) {
   if (display_prio >= 5) return;
   display_prio = 5;
-  display_expire = millis()+1000*10;
+  display_expire = millis()+1000*20;
   tonePICK();
-  Serial.println(String("PICK ")+barcode);
+  Serial.print("PICK "+barcode);
 
   yield();
   display.clearDisplay();
@@ -158,7 +203,34 @@ void pick(String cn, String barcode, String author, String title) {
   display.setTextColor(WHITE);
   display.setFont();
   display.setCursor(0,0);
-  display.println("PICK "+barcode);
+  display.print("PICK ");
+  display.println(cn);
+  display.setFont(&Picopixel);
+  display.setCursor(0,12);
+  display.println(author);
+  display.println(title);
+  yield();
+  display.display();
+}
+
+void noop(String cn, String barcode, String author, String title) {
+  if (display_prio >= 5) return;
+  display_prio = 1;
+  display_expire = millis()+1000*10;
+//  tonePICK();
+  Serial.print("last ");
+  Serial.println(barcode);
+
+  yield();
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setFont();
+  display.setCursor(0,0);
+  //display.print("last ");
+  display.println(cn);
+  display.setFont(&Picopixel);
+  display.setCursor(0,12);
   display.println(author);
   display.println(title);
   yield();
@@ -181,12 +253,6 @@ void info(String s) {
   display.display();
 }
 
-int read_blocks = 7;
-byte* send_buffer;
-byte* queue;
-int q_size = 1024;
-int q_pos = 0;
-int record_size = 8+2+read_blocks*4+2; // align 
 
 byte* queue_find(const byte* uid) {
   //Serial.print("queue search "); jmy622.hexprint(uid, 8); Serial.println();
@@ -216,6 +282,7 @@ byte* queue_find(const byte* uid) {
 }
 
 int scan() {
+  byte buf[read_blocks*4];
   if (q_pos >= q_size - record_size) {
     error("Queue full");
     return 0;
@@ -227,11 +294,15 @@ int scan() {
     
     if (!uid) break;
 
-    const byte* data = jmy622.iso15693_read(0,read_blocks); // read blocks 0..7
+    yield();
+    const byte* data = jmy622.iso15693_read(start_block,read_blocks);
+    if (!data) break;
+    yield();
+    memcpy(buf, data, read_blocks*4);
+    // iso_quiet() will overwrite the data, so let's have a safe copy
 
     jmy622.hexprint(uid, 8); Serial.print(" => "); Serial.println((long)data, HEX);
     
-    if (!data) break;
     if (!jmy622.iso15693_quiet()) break;
 
     byte* record = queue_find(uid);
@@ -246,15 +317,15 @@ int scan() {
       Serial.print(q_pos);
       Serial.print("/");
       Serial.println(q_size);
-      scan_count++;
+      count_total++;
+      count_from_idle++;
+      count_shelf++;
     }
 
     record[8] = 0; // flag TODO checkin button
-    record[9] = read_blocks*4+2; // align
-    record[10] = 0x42;
-    record[11] = 0x42;
-    
-    memcpy(record+12, data, record_size-12);
+    record[9] = read_blocks*4; // align
+
+    memcpy(record+10, buf, read_blocks*4);
 
     if (state==2) {
        toneTock();
@@ -262,15 +333,16 @@ int scan() {
        toneTick();
     }
     
-    Serial.println("record: ");
-    jmy622.hexdump(record, record_size);
+//    Serial.println("record: ");
+//    jmy622.hexdump(record, record_size);
 
     for (int i=10; i<record_size-10; i++) {
-      hexdump(record+i, strlen("SHELF#"));
+//      hexdump(record+i, strlen("SHELF#"));
       if (memcmp((char*)(record+i), "SHELF#", strlen("SHELF#"))) continue;
       i+= strlen("SHELF#");
       strncpy(shelf, (char*)(record+i), 32);
       Serial.println(shelf);
+      count_shelf = 0;
     }
   }
   return ct;
@@ -296,24 +368,24 @@ void setup() {
   yield();
   delay(100);
 
+  yield();
+  Serial.println();
+  Serial.println(String("INIT... build ")+__DATE__+" "+__TIME__);
+  Serial.print(String("queue ")+(q_size/1024)+"Kb (0x"); Serial.print((long)queue, HEX); Serial.println();
+
   send_buffer = (byte*)malloc(q_size);
   if (!send_buffer) {
     error("Can't allocate minumum queue memory");
     while(1) delay(1000);
   }
-  for(;;) {
-    int size = q_size*2;
-    byte* q = (byte*)realloc(send_buffer, size);
-    if (!q) break;
-    send_buffer = q; q_size = size;
-  }
-  queue = send_buffer+10;
-  q_size -= 10;
 
-  yield();
-  Serial.println();
-  Serial.println(String("INIT... build ")+__DATE__+" "+__TIME__);
-  Serial.print(String("queue ")+(q_size/1024)+"Kb (0x"); Serial.print((long)queue, HEX); Serial.println();
+  send_buffer[0] = 0x42;
+  send_buffer[1] = 0x42;
+  WiFi.macAddress(send_buffer+2);
+  send_buffer[8] = '\0'; // shelf
+  shelf[0] = '\0';
+  queue = send_buffer+8+32;
+  q_size -= 8+32;
 
   display.clearDisplay();
   display.setRotation(2);
@@ -321,7 +393,10 @@ void setup() {
   display.setTextColor(WHITE);
   display.setFont(&Picopixel);
   display.setCursor(0,4);
-  display.println(String("INIT... built ")+__DATE__+" - "+__TIME__);
+  display.print("INIT... built ");
+  display.print(__DATE__);
+  display.print(" - ");
+  display.println(__TIME__);
   display.display();
 
   jmy622.info();
@@ -331,7 +406,6 @@ void setup() {
 
 void sleep() {
   state = 0;
-  yield();
   WiFi.mode(WIFI_OFF);
 //  yield();
 //  jmy622.idle();
@@ -361,6 +435,7 @@ void wake_up() {
   WiFi.mode(WIFI_STA);
   yield();
   idle_expire = millis()+1000*IDLE_TIME;
+  count_from_idle = 0;
 }
 
 void loop() {
@@ -386,6 +461,7 @@ void loop() {
   } else {
     update_display();
     wifi_recv();
+    wifi_send();
     wifi_init();
   }
 }
@@ -435,7 +511,7 @@ int wifi_send() {
   }
   wifi_wait = millis()+1000*1; // antiflood
 
-  int len = q_pos+8;
+  int len = q_pos+8+32;
   if (!client.connect(host(), port())) {
     Serial.println(String("client.connect(")+host()+":"+port()+") failed");
     error("server connection failed");
@@ -447,6 +523,8 @@ int wifi_send() {
                "Content-Length: "+ (len) +"\r\n" +
                "Connection: close\r\n\r\n");
 
+  Serial.println("SENDING:");
+  jmy622.hexdump(send_buffer, len);
   int sent = 0;
   while(sent < len) {
     int w = client.write((const byte*)(send_buffer+sent), len-sent);
@@ -458,7 +536,9 @@ int wifi_send() {
     sent += w;
   }
   Serial.print("sent "); Serial.print(sent); Serial.println(" bytes");
-  wifi_timeout = millis()+1000*15; 
+  wifi_timeout = millis()+1000*15; // read timeout
+  q_pos = 0;
+  memcpy(send_buffer+8, shelf, 32); // mark for the next data
 }
 
 long wifi_init_wait = 0;
@@ -478,7 +558,7 @@ int wifi_init() {
     error("server connection failed");
     return 0;
   }
-  Serial.println("/arduino/epoch");
+  Serial.println("/arduino/ping");
   client.print(String("GET ") + "/arduino/epoch" + " HTTP/1.0\r\n" +
                "Host: " + host() + "\r\n" + 
                "Connection: close\r\n\r\n");
@@ -507,36 +587,74 @@ int wifi_recv() {
   }
   Serial.println("..");
 
-  String msg = client.readStringUntil('\n');
-  Serial.println(msg);
+  for(;;) {
+    String msg = client.readStringUntil('\n');
+    if (!msg) break;
+    Serial.println(msg);
 
-  if (msg.equals("WRT")) {
-    toneWAIT();
-    int len = client.readStringUntil('\n').toInt();
+    if (msg.equals("WRT")) {
+      toneWAIT();
+      int len = client.readStringUntil('\n').toInt();
 //    memset(wid, 0, 256);
 //    client.read(wid, len);
 //    SERIALHEXDUMP(wid, len);
-  }
-  else if (msg.equals("NOOP")) {
-    String barcode = client.readStringUntil('\n');
-    String author = client.readStringUntil('\n');
-    String title = client.readStringUntil('\n');
-    String cn = client.readStringUntil('\n');
-    info(barcode+"\n"+author+"\n"+title);
-  }
-  else if (msg.equals("PICK")) {
-    String barcode = client.readStringUntil('\n');
-    String author = client.readStringUntil('\n');
-    String title = client.readStringUntil('\n');
-    String cn = client.readStringUntil('\n');
-    pick(cn, barcode, author, title);
-  }
-  else if (msg.equals("EPOCH")) {
-    String e = client.readStringUntil('\n');
-    epoch = e.toInt()-millis()/1000;
-  }
-  else {
-    Serial.println(String("UNKNOWN CMD: '")+msg+"'");
+    }
+    else if (msg.equals("NOOP")) {
+      String barcode = client.readStringUntil('\n');
+      String author = client.readStringUntil('\n');
+      String title = client.readStringUntil('\n');
+      String cn = client.readStringUntil('\n');
+      noop(cn, barcode, author, title);
+    }
+    else if (msg.equals("PICK")) {
+      String barcode = client.readStringUntil('\n');
+      String author = client.readStringUntil('\n');
+      String title = client.readStringUntil('\n');
+      String cn = client.readStringUntil('\n');
+      pick(cn, barcode, author, title);
+    }
+    else if (msg.equals("EPOCH")) {
+      String e = client.readStringUntil('\n');
+      epoch = e.toInt()-millis()/1000;
+    }
+    else if (msg.equals("IMG") or msg.equals("PIMG")) {
+      if (msg.equals("PIMG")) tonePICK();
+      display.clearDisplay();
+      for (int i=0; i<6; i++) {
+        delay(1);
+        String line = client.readStringUntil('\n');
+        for (int x=0; x<128; x++) {
+          char c = line[x];
+          byte b = 0;
+          if (c>='A' && c<='Z') b = c-'A';
+          else if (c>='a' && c<='z') b = c-'a'+26;
+          else if (c>='0' && c<='9') b = c-'0'+52;
+          else if (c=='+') b = 62;
+          else b = 63;
+          delay(0);
+          //Serial.print(b<16 ? ":0":":");
+          //Serial.print(b, HEX);
+          for (int y=0; y<6; y++) {
+            if (b&(1<<y)) display.drawPixel(x, y+i*6, WHITE);
+            else  display.drawPixel(x, y+i*6, BLACK);
+          }
+        }
+        //Serial.println();
+      }
+      display.display();
+      Serial.println("IMG DONE");
+      display_prio = 5;
+      display_expire = millis()+1000*20;
+      //tonePICK();
+    }
+    else if (msg.equals("END")) {
+      break;
+    }
+    else {
+      Serial.println(String("UNKNOWN CMD: '")+msg+"'");
+      wifi_wait = millis()+1000*30;
+      break;
+    }
   }
   client.stop();
   
