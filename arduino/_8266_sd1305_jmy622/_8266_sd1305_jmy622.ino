@@ -532,8 +532,8 @@ int wifi_send() {
                "Content-Length: "+ (len) +"\r\n" +
                "Connection: close\r\n\r\n");
 
-  Serial.println("SENDING:");
-  jmy622.hexdump(send_buffer, len);
+//  Serial.println("SENDING:");
+//  jmy622.hexdump(send_buffer, len);
   int sent = 0;
   while(sent < len) {
     int w = client.write((const byte*)(send_buffer+sent), len-sent);
