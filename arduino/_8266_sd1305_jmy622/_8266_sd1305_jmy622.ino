@@ -83,17 +83,13 @@ int wifi_gfx[] = {
 
 int display_cycle = 0;
 void update_display() {
-  if (millis() < display_expire) return;
-  display_prio = 0;
-//  expire = millis()+1000;
+  if (millis() > display_expire) full_update_display();
+  display_cycle++;
 
   yield();
-  display.clearDisplay();
-
-  display_cycle++;
   int wx = 127;
   int wy = 0;
-
+  display.fillRect(wx-10, wy, 11, 7, BLACK);
   if (client.connected()) {
     display_cycle %=4;
     if (display_cycle<2) {
@@ -114,6 +110,13 @@ void update_display() {
     }
   }
   yield();
+  display.display();
+}
+
+void full_update_display() {
+  display_prio = 0;
+  yield();
+  display.clearDisplay();
 
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -167,7 +170,6 @@ void update_display() {
   display.println(String("")+"WiFi:"+wifi+"%");
   */
   yield();
-  display.display();
 }
 
 
