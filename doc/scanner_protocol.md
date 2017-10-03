@@ -1,4 +1,25 @@
-# RFID Scanner http protocol
+# RFID communication
+
+The scanner can talk with the server using different protocols, although right now only http is implemented.
+
+## http
+```
+POST /myURL/8266_128x32 HTTP/1.1
+Host: rfidscanner.mydomain.com
+Length: <REQLEN>
+
+<REQ>
+```
+which the server replies with
+```
+HTTP/1.1 200 OK
+Content-Length: <RESLEN>
+
+<RES>
+```
+
+
+# RFID Scanner protocol
 ```
 HEADER:
 Bytes  Desc
@@ -15,7 +36,7 @@ N      data
 ```
 After the scanner found 1 or more RFID tags, it will send a request to the server with a header and one or more records.
 
-records might contains rfid tags related to items, or shelf tags.
+anything scanned will be sent to the server.
 
 each tags following a shelf tag belongs to that shelf, and not the initial shelf value.
 
@@ -25,36 +46,12 @@ for a shelf, the data will contains `SHELF#shelf.name.here`
 
 The server might respond with:
 
-## NOOP
-```
-NOOP\n
-$barcode\n
-$author\n
-$title\n
-$callnum\n
-$location\n
-```
-There is nothing to do (the server just return the information of the first record, which can be useful only to verify that everything is working or identify a lonely tag)
-
-## PICK
-```
-PICK\n
-$barcode\n
-$author\n
-$title\n
-$callnum\n
-$location\n
-```
-One of the books need to be picked up. The destination of the book will be written in the $location.
-
 ## READ
 ```
 READ\n
 $rfid (8 bytes)\n
 ```
-The scanner need to read more data from the given RFID tag id (usually when the scanner didn’t send any data, but there is no mapping of the RFID tag id on the server).
-
-The scanner should re-scan (Reset To Ready) the tag, and be sure to read enough block data from the tag.
+The scanner should re-scan (Reset To Ready) the tag, and read the tag data again.
 
 ## WRITE
 ```
@@ -64,23 +61,30 @@ $rfid+$data
 ```
 The scanner need to overwrite the tag with the given RFID id, with $data. (the $rfid is 8 bytes and is the rfid id that need to be written, while $data is the data to be written)
 
+The scanner should then read the tag again and send the content back to the server as a confirmation.
+
 ## IMG
 ```
 IMG\n
-base64 128 chars\n
-base64 128 chars\n
-base64 128 chars\n
-base64 128 chars\n
-base64 128 chars\n
-base64 128 chars\n
+priority\n
+base64 chars\n
+[...]
 ```
+Send a bitmap to the client, with the given `priority` (Higher priority wins).
 
-display a custom image on the display, top left bixel is the lowest bit of the first byte of the first line.
+The data and number of base64 strings can be encoded differently for different devices.
 
-The main reason for doing this is to use unicode letters, which are too cumbersome to upload as a font on some devices.
+## TONE
+```
+TONE\n
+GIVEN\n
+```
+The device should play the `GIVEN` sound.
 
-the size is 128x32
+right now, those sounds are supported:
 
-## PIMG
+|tone|description|
+|----|-----------|
+|PICK|an item needs to be picked up|
+|KO|some generic errors|
 
-same as IMG, but higher display priority and expire, and it will trigger a sound like PICK
