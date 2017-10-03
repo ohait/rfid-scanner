@@ -52,21 +52,21 @@ long epoch = 0;
 int wake = 0;
 long prev_checkin = 0;
 void checkin() {
-  long ago = millis() - prev_checkin;
-  prev_checkin = millis();
   if (state==0) wake=1;
-  if (digitalRead(CHECKIN_PIN)==LOW) {
+  if (digitalRead(CHECKIN_PIN)==LOW) { // PRESS
+    prev_checkin = millis();
     state = 2;
   } else {
+    long ago = millis() - prev_checkin;
+    prev_checkin = 0;
+    Serial.println(ago);
     state = 1;
-    if (ago<500) {
+    if (ago<500 && ago>10) { // sometimes buttons are bouncing, so only at least 50 ms long
       shelf[0] = '\0'; // a quick press will reset the shelf
     }
   }
   idle_expire = millis()+1000*IDLE_TIME; // extends the idle time
   display_expire = 0; // clear the display
-//  Serial.print("checking() => ");
-//  Serial.println(state);
 }
 
 
