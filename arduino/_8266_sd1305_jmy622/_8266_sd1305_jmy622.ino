@@ -443,7 +443,7 @@ void wake_up() {
 void loop() {
   // IDLE LOOP?
   if (state==0) {
-    delay(100);
+    delay(1000);
     return;
   }
 
@@ -457,9 +457,8 @@ void loop() {
   }
 
   if (scan()) {
-    Serial.println("-------------");
+    //Serial.println("-------------");
     idle_expire = millis()+1000*IDLE_TIME;
-    //pick("123.45 Dew", "03010034815003", "U. N. Owen", "Misterious Title, with subtitle");
   } else {
     update_display();
     wifi_recv();
