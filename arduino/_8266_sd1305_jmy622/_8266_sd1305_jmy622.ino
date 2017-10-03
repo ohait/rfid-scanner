@@ -478,8 +478,16 @@ int wifi_connect() {
   if (millis()<wifi_timeout) {
     return 0;
   }
-
   yield();
+
+#ifdef WIFI_SSID
+#ifdef WIWI_PASS
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  wifi_timeout = millis() + 1000*20; // wait 20 seconds before trying another network
+  return 0;
+#endif
+#endif
+
   int ct = WiFi.scanNetworks();
   for (int i=0; i<ct; i++) {
     yield();
