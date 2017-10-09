@@ -148,19 +148,34 @@ void full_update_display() {
   }
 
   yield();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setFont(&Picopixel);
-  display.setCursor(0,22);
-  int queue_full = q_pos *100 /q_size;
-  display.print("buffer: ");
-  display.print(queue_full);
-  display.print("%");
 
   if (shelf[0]) { // first byte is not \0
     display.setFont(&Picopixel);
-    display.setCursor(0,30);
+    display.setCursor(0,22);
     display.println(String("")+"shelf: "+shelf);
+  }
+
+  yield();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setFont(&Picopixel);
+  display.setCursor(0,30);
+  int queue_full = q_pos *100 /q_size;
+  display.print("buffer: ");
+  display.print(q_pos/record_size);
+  display.print(" (");
+  display.print(queue_full);
+  display.print("%)");
+
+  if (epoch) {
+    display.setFont(&Picopixel);
+    display.setCursor(110,30);
+    long e = millis()/1000+epoch;
+    struct tm* now = localtime(&e);
+    display.print(now->tm_hour);
+    display.print(now->tm_sec%2 ? " ":":");
+    display.print(now->tm_min<10?"0":"");
+    display.print(now->tm_min);
   }
 
 /*
@@ -191,52 +206,6 @@ void error(String msg) {
   display.display();
 }
 
-void pick(String cn, String barcode, String author, String title) {
-  if (display_prio >= 5) return;
-  display_prio = 5;
-  display_expire = millis()+1000*20;
-  tonePICK();
-  Serial.print("PICK "+barcode);
-
-  yield();
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setFont();
-  display.setCursor(0,0);
-  display.print("PICK ");
-  display.println(cn);
-  display.setFont(&Picopixel);
-  display.setCursor(0,12);
-  display.println(author);
-  display.println(title);
-  yield();
-  display.display();
-}
-
-void noop(String cn, String barcode, String author, String title) {
-  if (display_prio >= 5) return;
-  display_prio = 1;
-  display_expire = millis()+1000*10;
-//  tonePICK();
-  Serial.print("last ");
-  Serial.println(barcode);
-
-  yield();
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setFont();
-  display.setCursor(0,0);
-  //display.print("last ");
-  display.println(cn);
-  display.setFont(&Picopixel);
-  display.setCursor(0,12);
-  display.println(author);
-  display.println(title);
-  yield();
-  display.display();
-}
 
 void info(String s) {
   if (display_prio >= 1) return;
@@ -312,12 +281,12 @@ int scan() {
       record = queue + q_pos;
       memcpy(record, uid, 8);
       q_pos += record_size;
-      Serial.print("New tag: ");
-      jmy622.hexprint(uid, 8);
-      Serial.print(", queue is ");
-      Serial.print(q_pos);
-      Serial.print("/");
-      Serial.println(q_size);
+//      Serial.print("New tag: ");
+//      jmy622.hexprint(uid, 8);
+//      Serial.print(", queue is ");
+//      Serial.print(q_pos);
+//      Serial.print("/");
+//      Serial.println(q_size);
       count_total++;
       count_from_idle++;
       count_shelf++;
@@ -350,7 +319,8 @@ int scan() {
 }
 
 void setup() {
-  Serial.begin(9600);
+  //Serial.begin(9600);
+  Serial.begin(115200);
   SSerial.begin(19200);
   pinMode(BUZZER_PIN, OUTPUT);
   pinMode(CHECKIN_PIN, INPUT_PULLUP);
@@ -506,8 +476,9 @@ int wifi_connect() {
 }
 
 long wifi_wait = 0;
+long next_ping = 0;
 int wifi_send() {
-  if (!q_pos) return 0; // nothing to do
+  if (!q_pos && millis() < next_ping) return 0; // nothing to do
   if (client.connected()) { // already waiting for an answer
     return 0;
   }
@@ -525,6 +496,7 @@ int wifi_send() {
     error("server connection failed");
     return 0;
   }
+  next_ping = millis()+1000*60;
   //Serial.println(String("Sending data ")+millis());
   client.print(String("POST ") + url() + " HTTP/1.0\r\n" +
                "Host: " + host() + "\r\n" + 
@@ -557,6 +529,7 @@ int wifi_init() {
   if (wifi_connect()<30) { // poor wifi
     return 0;
   }
+  return 1;
   if (millis()<wifi_init_wait) { // I should wait
     return 0;
   }
@@ -566,8 +539,7 @@ int wifi_init() {
     error("server connection failed");
     return 0;
   }
-  Serial.println("/arduino/ping");
-  client.print(String("GET ") + "/arduino/epoch" + " HTTP/1.0\r\n" +
+  client.print(String("GET ") + url() + " HTTP/1.0\r\n" +
                "Host: " + host() + "\r\n" + 
                "Connection: close\r\n\r\n");
   wifi_timeout = millis()+1000*15; 
@@ -607,21 +579,7 @@ int wifi_recv() {
 //    client.read(wid, len);
 //    SERIALHEXDUMP(wid, len);
     }
-    else if (msg.equals("NOOP")) {
-      String barcode = client.readStringUntil('\n');
-      String author = client.readStringUntil('\n');
-      String title = client.readStringUntil('\n');
-      String cn = client.readStringUntil('\n');
-      noop(cn, barcode, author, title);
-    }
-    else if (msg.equals("PICK")) {
-      String barcode = client.readStringUntil('\n');
-      String author = client.readStringUntil('\n');
-      String title = client.readStringUntil('\n');
-      String cn = client.readStringUntil('\n');
-      pick(cn, barcode, author, title);
-    }
-    else if (msg.equals("EPOCH")) {
+    else if (msg.equals("LOCAL_EPOCH")) {
       String e = client.readStringUntil('\n');
       epoch = e.toInt()-millis()/1000;
     }
