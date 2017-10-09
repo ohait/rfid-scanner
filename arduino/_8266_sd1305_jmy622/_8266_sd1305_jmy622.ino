@@ -450,7 +450,7 @@ int wifi_connect() {
   yield();
 
 #ifdef WIFI_SSID
-#ifdef WIWI_PASS
+#ifdef WIFI_PASS
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   wifi_timeout = millis() + 1000*20; // wait 20 seconds before trying another network
   return 0;
