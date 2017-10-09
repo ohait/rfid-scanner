@@ -25,7 +25,7 @@ Adafruit_SSD1305 display(2);
 #include "secrets.h"
 
 // IDLE
-long idle_expire = 1000*IDLE_TIME;
+long idle_after = 1000*IDLE_TIME;
 
 // GLOBAL VARS
 int start_block = 0;
@@ -59,13 +59,12 @@ void checkin() {
   } else {
     long ago = millis() - prev_checkin;
     prev_checkin = 0;
-    Serial.println(ago);
     state = 1;
     if (ago<500 && ago>10) { // sometimes buttons are bouncing, so only at least 50 ms long
       shelf[0] = '\0'; // a quick press will reset the shelf
     }
   }
-  idle_expire = millis()+1000*IDLE_TIME; // extends the idle time
+  idle_after = millis()+1000*IDLE_TIME; // extends the idle time
   display_expire = 0; // clear the display
 }
 
@@ -373,7 +372,6 @@ void setup() {
   yield();
   Serial.println();
   Serial.println(String("INIT... build ")+__DATE__+" "+__TIME__);
-  Serial.print(String("queue ")+(q_size/1024)+"Kb (0x"); Serial.print((long)queue, HEX); Serial.println();
 
   send_buffer = (byte*)malloc(q_size);
   if (!send_buffer) {
@@ -388,6 +386,7 @@ void setup() {
   shelf[0] = '\0';
   queue = send_buffer+8+32;
   q_size -= 8+32;
+  Serial.println(String("queue ")+(q_size/1024)+"Kb");
 
   display.clearDisplay();
   display.setRotation(2);
@@ -436,7 +435,7 @@ void wake_up() {
   yield();
   WiFi.mode(WIFI_STA);
   yield();
-  idle_expire = millis()+1000*IDLE_TIME;
+  idle_after = millis()+1000*IDLE_TIME;
   count_from_idle = 0;
 }
 
@@ -451,14 +450,14 @@ void loop() {
     wake_up(); 
     wake=0;
   }
-  if (millis() > idle_expire) {
+  if (millis() > idle_after) {
     sleep();
     return;
   }
 
   if (scan()) {
     //Serial.println("-------------");
-    idle_expire = millis()+1000*IDLE_TIME;
+    idle_after = millis()+1000*IDLE_TIME;
   } else {
     update_display();
     wifi_recv();
@@ -651,10 +650,8 @@ int wifi_recv() {
         //Serial.println();
       }
       display.display();
-      Serial.println("IMG DONE");
       display_prio = 5;
       display_expire = millis()+1000*20;
-      //tonePICK();
     }
     else if (msg.equals("END")) {
       break;
