@@ -8,3 +8,10 @@ The materials used are:
 - Buzzer
 - Momentary Pushbutton
 - Capacitory 100µF
+
+average power usage: (untested)
+
+| device | working | idle |
+|--------|-------|--------|
+| esp8266 | 120mA | 16mA |
+| jmy622 | 90mA | 1mA |
