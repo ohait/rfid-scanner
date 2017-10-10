@@ -16,13 +16,18 @@ inline void toneNO() {
   noTone(BUZZER_PIN);
 }
 
+inline void toneTee() {
+  tone(BUZZER_PIN, 12000); delay(40);
+  noTone(BUZZER_PIN);
+}
+
 inline void toneTick() {
   tone(BUZZER_PIN, 8000); delay(40);
   noTone(BUZZER_PIN);
 }
 
 inline void toneTock() {
-  tone(BUZZER_PIN, 200); delay(40);
+  tone(BUZZER_PIN, 200); delay(30);
   noTone(BUZZER_PIN);
 }
 
