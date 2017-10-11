@@ -609,7 +609,14 @@ int wifi_recv() {
       epoch = e.toInt()-millis()/1000;
     }
     else if (msg.equals("IMG") or msg.equals("PIMG")) {
-      if (msg.equals("PIMG")) tonePICK();
+      if (msg.equals("PIMG")) {
+        tonePICK();
+        display_prio = 5;
+        display_expire = millis()+1000*20;
+      } else {
+        display_prio = 1;
+        display_expire = millis()+1000*10;
+      }
       display.clearDisplay();
       for (int i=0; i<6; i++) {
         delay(1);
@@ -633,15 +640,13 @@ int wifi_recv() {
         //Serial.println();
       }
       display.display();
-      display_prio = 5;
-      display_expire = millis()+1000*20;
     }
     else if (msg.equals("END")) {
       break;
     }
     else {
       Serial.println(String("UNKNOWN CMD: '")+msg+"'");
-      wifi_wait = millis()+1000*30;
+      wifi_wait = millis()+1000*10;
       break;
     }
   }
