@@ -588,7 +588,10 @@ int wifi_recv() {
     if (!msg) break;
 //    Serial.println(msg);
 
-    if (msg.equals("WRT")) {
+    if (msg.equals("")) {
+      // ignore empty strings
+    }
+    else if (msg.equals("WRT")) {
       toneWAIT();
       int len = client.readStringUntil('\n').toInt();
       if (len>64) {
