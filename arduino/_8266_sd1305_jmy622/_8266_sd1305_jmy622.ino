@@ -309,6 +309,7 @@ int scan() {
       jmy622.iso15693_write(start_block,read_blocks, wrt+8);
       toneOK();
       memset(wrt, 0, 8);
+      delay(10);
     }
 
     yield();
@@ -446,8 +447,8 @@ void sleep() {
   state = 0;
   shelf_reset();
   WiFi.mode(WIFI_OFF);
-//  yield();
-//  jmy622.idle();
+  yield();
+  jmy622.idle();
   yield();
   display.clearDisplay();
   display.display();
