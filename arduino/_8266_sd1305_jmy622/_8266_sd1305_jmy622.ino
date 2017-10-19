@@ -6,6 +6,7 @@
 #include <ESP8266WiFi.h>
 WiFiClient client;
 #include <time.h>
+#include "autoupdate.h"
 
 #define QUEUE_SIZE 32*1024
 #define IDLE_TIME 180
@@ -198,6 +199,30 @@ void full_update_display() {
   yield();
 }
 
+void img() {
+  display.clearDisplay();
+  for (int i=0; i<6; i++) {
+    delay(1);
+    String line = client.readStringUntil('\n');
+    for (int x=0; x<128; x++) {
+      char c = line[x];
+      byte b = 0;
+      if (c>='A' && c<='Z') b = c-'A';
+      else if (c>='a' && c<='z') b = c-'a'+26;
+      else if (c>='0' && c<='9') b = c-'0'+52;
+      else if (c=='+') b = 62;
+      else b = 63;
+      delay(0);
+      //Serial.print(b<16 ? ":0":":");
+      //Serial.print(b, HEX);
+      for (int y=0; y<6; y++) {
+        if (b&(1<<y)) display.drawPixel(x, y+i*6, WHITE);
+        else  display.drawPixel(x, y+i*6, BLACK);
+      }
+    }
+  }
+  display.display();
+}
 
 void error(String msg) {
   if (display_prio >= 9) return;
@@ -397,8 +422,23 @@ void setup() {
   display.display();
 
   jmy622.info();
-  toneOK();
 
+  if (digitalRead(CHECKIN_PIN)==LOW) { // PRESS
+    toneWAIT();
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setFont();
+    display.setCursor(0,0);
+    display.println("Software update");
+    display.display();
+    while(WiFi.status() != WL_CONNECTED) {
+      delay(200);
+    }
+    software_update(&client, AUTOUPDATE_HOST, AUTOUPDATE_PORT, AUTOUPDATE_PATH);
+  }
+
+  toneOK();
 }
 
 void sleep() {
@@ -522,6 +562,7 @@ int wifi_send() {
   //Serial.println(String("Sending data ")+millis());
   client.print(String("POST ") + url() + " HTTP/1.0\r\n" +
                "Host: " + host() + "\r\n" + 
+               "X-Scanner-Ver: "+__DATE__+" "+__TIME__+"\r\n" +
                "Content-Length: "+ (len) +"\r\n" +
                "Connection: close\r\n\r\n");
 
@@ -563,6 +604,7 @@ int wifi_init() {
   }
   client.print(String("GET ") + url() + " HTTP/1.0\r\n" +
                "Host: " + host() + "\r\n" + 
+               "X-Scanner-Ver: "+__DATE__+" "+__TIME__+"\r\n" +
                "Connection: close\r\n\r\n");
   wifi_timeout = millis()+1000*15; 
 }
@@ -614,38 +656,46 @@ int wifi_recv() {
       String e = client.readStringUntil('\n');
       epoch = e.toInt()-millis()/1000;
     }
-    else if (msg.equals("IMG") or msg.equals("PIMG")) {
-      if (msg.equals("PIMG")) {
+    else if (msg.equals("IMG")) {
+//      Serial.print("IMG current display prio is: "); Serial.println(display_prio);
+      if (display_prio <= 1) {
+        display_prio = 1;
+        display_expire = millis()+1000*10;
+        img();
+      } else {
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+      }
+    }
+    else if (msg.equals("PIMG")) {
+      Serial.print("IMG current display prio is: "); Serial.println(display_prio);
+      if (display_prio <= 5) {
         tonePICK();
         display_prio = 5;
         display_expire = millis()+1000*20;
+        img();
       } else {
-        display_prio = 1;
-        display_expire = millis()+1000*10;
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
       }
-      display.clearDisplay();
-      for (int i=0; i<6; i++) {
-        delay(1);
-        String line = client.readStringUntil('\n');
-        for (int x=0; x<128; x++) {
-          char c = line[x];
-          byte b = 0;
-          if (c>='A' && c<='Z') b = c-'A';
-          else if (c>='a' && c<='z') b = c-'a'+26;
-          else if (c>='0' && c<='9') b = c-'0'+52;
-          else if (c=='+') b = 62;
-          else b = 63;
-          delay(0);
-          //Serial.print(b<16 ? ":0":":");
-          //Serial.print(b, HEX);
-          for (int y=0; y<6; y++) {
-            if (b&(1<<y)) display.drawPixel(x, y+i*6, WHITE);
-            else  display.drawPixel(x, y+i*6, BLACK);
-          }
-        }
-        //Serial.println();
-      }
-      display.display();
+    }
+    else if (msg.equals("SOFTWARE_UPDATE")) {
+      String path = client.readStringUntil('\n');
+      client.stop(); // software update take priority
+      Serial.print("SOFTWARE UPDATE: "); Serial.println(path);
+      error("Automatic Update\nPlase wait\n(several minutes)");
+      software_update(&client, AUTOUPDATE_HOST, AUTOUPDATE_PORT, path.c_str());
+      error("Update failed");
+      delay(2000);
+      ESP.restart();
     }
     else if (msg.equals("END")) {
       break;
