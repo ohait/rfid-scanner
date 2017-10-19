@@ -48,6 +48,10 @@ int count_total = 0;
 int count_from_idle = 0;
 int count_shelf = 0;
 
+inline void shelf_reset() {
+  memset(shelf, 0, 32);
+}
+
 // CURRENT STATE
 int state = 1; // 0 idle, 1 Inventory, 2 Checkin
 long epoch = 0;
@@ -58,12 +62,12 @@ void checkin() {
   if (digitalRead(CHECKIN_PIN)==LOW) { // PRESS
     long ago = millis() - prev_checkin;
     if (ago>10) { // sometimes buttons are bouncing, so only at least 10 ms long
+      prev_checkin = millis();
 //      Serial.println(ago);
       if (ago<500) {
-        shelf[0] = '\0'; // a quick press will reset the shelf
+        shelf_reset();
       }
     }
-    prev_checkin = millis();
     state = 2;
   } else {
     state = 1;
@@ -289,7 +293,8 @@ int scan() {
     memcpy(buf, data, read_blocks*4);
     // iso_quiet() will overwrite the data, so let's have a safe copy
 
-    jmy622.hexprint(uid, 8); Serial.print(" => "); Serial.println((long)data, HEX);
+    Serial.print("ISO15693 ");jmy622.hexprint(uid, 8); Serial.println();
+    jmy622.hexdump(buf, read_blocks*4);
     
     if (!jmy622.iso15693_quiet()) break;
 
@@ -375,7 +380,7 @@ void setup() {
   send_buffer[1] = 0x42;
   WiFi.macAddress(send_buffer+2);
   send_buffer[8] = '\0'; // shelf
-  shelf[0] = '\0';
+  shelf_reset();
   queue = send_buffer+8+32;
   Serial.println(String("queue ")+(q_size/1024)+"Kb ("+(q_size/record_size)+" records)");
 
@@ -397,8 +402,9 @@ void setup() {
 }
 
 void sleep() {
+  Serial.println("Zzzzz...");
   state = 0;
-  shelf[0] = '\0';
+  shelf_reset();
   WiFi.mode(WIFI_OFF);
 //  yield();
 //  jmy622.idle();
