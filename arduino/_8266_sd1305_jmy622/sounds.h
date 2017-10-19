@@ -32,11 +32,11 @@ inline void toneTock() {
 }
 
 inline void tonePICK() {
-  tone(BUZZER_PIN, 500);  delay(50);
-  noTone(BUZZER_PIN);     delay(20);
-  tone(BUZZER_PIN, 500);  delay(50);
-  noTone(BUZZER_PIN);     delay(20);
-  tone(BUZZER_PIN, 500);  delay(50);
+  tone(BUZZER_PIN, 2000);  delay(2);
+  noTone(BUZZER_PIN);     delay(50);
+  tone(BUZZER_PIN, 3000);  delay(3);
+  noTone(BUZZER_PIN);     delay(50);
+  tone(BUZZER_PIN, 4000);  delay(4);
   noTone(BUZZER_PIN);
 }
 
