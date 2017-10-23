@@ -667,7 +667,7 @@ int wifi_recv() {
 //      Serial.print("IMG current display prio is: "); Serial.println(display_prio);
       if (display_prio <= 1) {
         display_prio = 1;
-        display_expire = millis()+1000*10;
+        display_expire = millis()+1000*15;
         img();
       } else {
         client.readStringUntil('\n');
@@ -683,7 +683,7 @@ int wifi_recv() {
       if (display_prio <= 5) {
         tonePICK();
         display_prio = 5;
-        display_expire = millis()+1000*20;
+        display_expire = millis()+1000*30;
         img();
       } else {
         client.readStringUntil('\n');
