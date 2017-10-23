@@ -4,6 +4,9 @@
 #include <Adafruit_SSD1305.h>
 #include <Wire.h>
 #include <ESP8266WiFi.h>
+extern "C" {
+#include "gpio.h"
+}
 WiFiClient client;
 #include <time.h>
 #include "autoupdate.h"
@@ -387,6 +390,9 @@ void setup() {
   display.begin();
 
   WiFi.mode(WIFI_STA);
+  WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
+  gpio_pin_wakeup_enable(GPIO_ID_PIN(CHECKIN_PIN), GPIO_PIN_INTR_ANYEDGE);
+  //wifi_set_sleep_type(LIGHT_SLEEP_T);
 //  WiFi.macAddress(mac);
 
   yield();
