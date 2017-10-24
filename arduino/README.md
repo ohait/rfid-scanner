@@ -25,3 +25,25 @@ Check-In scans are implementation specific, but most likely it will inform the s
 ## Other integration
 
 While the whole project is designed for libraries, I can't see why this couldn't be used differently.
+
+## installation
+
+follow instruction here to install the board 
+
+https://learn.adafruit.com/adafruit-feather-huzzah-esp8266/using-arduino-ide
+
+
+then install adafruit GFX for the oled display
+
+arduino ide => manage libraries => adafruit GFX
+
+
+also, you will need specific library for SSD1305 and the RFID module library:
+
+in `arduino/libraries/`
+
+`git clone git@github.com:adafruit/Adafruit_SSD1305_Library.git`
+
+`git clone git@github.com:ohait/jmy6xx.git`
+
+
