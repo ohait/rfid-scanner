@@ -15,7 +15,7 @@ WiFiClient client;
 #define IDLE_TIME 180
 
 #include <SoftwareSerial.h>
-#include <jmy6xx.h>;
+#include <jmy6xx.h>
 #define RFID_RX 12
 #define RFID_TX 14
 SoftwareSerial SSerial(RFID_RX,RFID_TX);
