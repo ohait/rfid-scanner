@@ -56,7 +56,7 @@ returns all the known barcodes that belong to the given biblionumber, and the sh
 
 TODO! this API might change in the future to accomodate permanent/temporary locations
 
-## `/json/dev/'
+## `/json/dev/`
 ```
 {
    "dev" : "5c:cf:7f:f0:ae:34",
@@ -148,3 +148,57 @@ GET /json/tag/e0:04:01:50:4e:94:06:ec
 
 returns the last entries of the log for a give rfid tag
 
+## `/json/<barcode>` 
+```
+GET /json/
+{
+   "after" : [],
+   "before" : [],
+   "entry" : {
+      "author" : "Henriksen, Levi",
+      "barcode" : "03011591338006",
+      "bibnum" : 1591338,
+      "cn" : "dc CD Hen",
+      "last_at" : 1508783227.7958,
+      "last_dev" : "flam.tagvision_sip_proxy.10.172.15.7",
+      "pubid" : "pe9e41ee6302d24a3f8c85d8671804333",
+      "rfid" : "e0:04:01:50:4e:94:06:ec",
+      "shelf" : "flam.pub.3.c1",
+      "shelf_at" : 1508771572,
+      "shelf_dev" : "5c:cf:7f:f0:ae:34",
+      "temp" : "flam.auto.out",
+      "temp_at" : 1508783227.7958,
+      "thumb" : "https://static.deichman.no/thumb/pe9e41ee6302d24a3f8c85d8671804333.jpg",
+      "title" : "Harpesang"
+   }, 
+   "history" : [
+      {
+         "action" : null,
+         "at" : 1508783227.79596,
+         "dev" : "flam.tagvision_sip_proxy.10.172.15.7",
+         "rfid" : "e0:04:01:50:4e:94:06:ec",
+         "type" : "MsgReqCheckout"
+      }, 
+      {
+         "action" : null,
+         "at" : 1508771572,
+         "dev" : "5c:cf:7f:f0:ae:34",
+         "rfid" : "e0:04:01:50:4e:94:06:ec",
+         "type" : null
+      }, 
+
+      {
+         "action" : null,
+         "at" : 1501668630.12409,
+         "dev" : "flam.tagvision_sip_proxy.10.172.15.7",
+         "rfid" : "e0:04:01:50:4e:94:06:ec",
+         "type" : "MsgReqCheckout"
+      }
+   ],
+   "path" : "/json/03011591338006",
+   "requested_at" : 1508932697.15131,
+   "type" : "nearby"
+}
+```
+
+returns all the details for a given barcode
