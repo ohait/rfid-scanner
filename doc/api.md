@@ -1,13 +1,13 @@
-#### API
+# API
 
 The server exposes APIs for querying the status of shelves, items or devices.
 
-### Common practices
+## Common practices
 
 * Timestamps are not in ISO8601 but instead in seconds from 1st Jan 1970 UTC, with decimals when available.
 * All responses will be a json object, with execution timestamp as `requeste_at`
 
-## `/json/shelf/`
+### `/json/shelf/`
 ```
 GET /json/shelf/flam.pub
 {
@@ -56,7 +56,7 @@ returns all the known barcodes that belong to the given biblionumber, and the sh
 
 TODO! this API might change in the future to accomodate permanent/temporary locations
 
-## `/json/dev/`
+### `/json/dev/`
 ```
 {
    "dev" : "5c:cf:7f:f0:ae:34",
@@ -87,7 +87,7 @@ returns the last entries in the log for the given device
 
 data can be different for different device, and will be purged when needed
 
-## `/json/tag/`
+### `/json/tag/`
 
 
 ```
@@ -148,7 +148,7 @@ GET /json/tag/e0:04:01:50:4e:94:06:ec
 
 returns the last entries of the log for a give rfid tag
 
-## `/json/<barcode>` 
+### `/json/<barcode>` 
 ```
 GET /json/
 {
