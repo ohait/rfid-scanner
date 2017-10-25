@@ -14,7 +14,7 @@ GET /json/shelf/flam.pub
    "parent" : "flam",
    "path" : "/json/shelf/flam.pub",
    "requested_at" : 1508931322.6837,
-   "results" : [
+   "children" : [
       {
          "count" : 0,
          "inherited" : 5515,
@@ -26,11 +26,31 @@ GET /json/shelf/flam.pub
          "name" : "flam.pub.3"
       }
    ],
-   "shelf" : "flam.pub"
+   "shelf" : "flam.pub",
+   "results" : [
+      {
+         "author" : "Hagerup, Inger",
+         "barcode" : "03010201744011",
+         "bibnum" : 201744,
+         "cn" : "D Hag",
+         "last_at" : 1508774441,
+         "last_dev" : "5c:cf:7f:f0:ae:34",
+         "rfid" : "e0:04:01:00:43:56:a0:ab",
+         "shelf" : "flam.pub.3.d4",
+         "shelf_at" : 1508774441,
+         "shelf_dev" : "5c:cf:7f:f0:ae:34",
+         "temp" : "flam.pub.3.d4",
+         "temp_at" : 1508774441,
+         "title" : "Samlede dikt"
+      },
+      [...]
+   ]
 }
 ```
 
-given a shelf (could be empty), returns all the shelves which belong to that shelf.
+for the given `shelf`, it returns all the books that belong to that shelf (or subshelves), last seen first.
+
+it also show the immediate sublevel of shelves if available, with item counters.
 
 `count` is the number of items on that shelf, while `inherited` are the items in shelves which are subshelves of the shelf.
 
