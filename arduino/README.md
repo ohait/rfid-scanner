@@ -12,19 +12,11 @@ It connects to a server via WiFi, and depends on it for the logic. IOW the devic
 
 The server could (and probably should) integrate with your ILS (Integrated Library System).
 
-## Shelves
+## Power
 
-The scanner will recognize rfid tags which contains specific `SHELF#<data>`, and use the give data as a mean for the server to know where the scanner is currently scanning.
+the device consume ~210mA when active, and <10mA when standby
 
-The server might decide that one of the scanned items is misplaced, and send a message back to the scanner to play a sound and update the display with relevant information on which item specifically need to be picked up.
-
-A momentary button can be used to either reset the shelf location (quick press) or perform a "check in" (hold, and scan again).
-
-Check-In scans are implementation specific, but most likely it will inform the server, and the integrated ILS, that the user actually picked up the item.
-
-## Other integration
-
-While the whole project is designed for libraries, I can't see why this couldn't be used differently.
+the 1200mAh LiPo battery should provide up to 6 hours of continuous scanning, and it will recharge in 10/12 hours
 
 ## installation
 
