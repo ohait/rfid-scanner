@@ -66,20 +66,20 @@ The scanner should then read the tag again and send the content back to the serv
 ## IMG
 ```
 IMG\n
-priority\n
-base64 chars\n
+$priority\n
+$base64\n
 [...]
 ```
-Send a bitmap to the client, with the given `priority` (Higher priority wins).
+Send a bitmap to the client, with the given `$priority` (Higher priority wins).
 
 The data and number of base64 strings can be encoded differently for different devices.
 
 ## TONE
 ```
 TONE\n
-GIVEN\n
+$tone\n
 ```
-The device should play the `GIVEN` sound.
+The device should play the given `$tone` sound.
 
 right now, those sounds are supported:
 

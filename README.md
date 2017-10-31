@@ -1,5 +1,6 @@
 # rfid-scanner
-RFID scanner for libraries
+
+Shelf cleaner for libraries
 
 This project contains arduino code, schematics, 3d models and server implementation for a generic library rfid scanner.
 
