@@ -36,7 +36,9 @@ in `arduino/libraries/`
 
 `git clone git@github.com:adafruit/Adafruit_SSD1305_Library.git`
 
-some patches are required for the 128x32 version <<TODO>>
+and apply the `.patch` to the library
+
+also get this to talk with the RFID module
 
 `git clone git@github.com:ohait/jmy6xx.git`
 
