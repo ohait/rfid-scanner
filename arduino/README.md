@@ -36,6 +36,8 @@ in `arduino/libraries/`
 
 `git clone git@github.com:adafruit/Adafruit_SSD1305_Library.git`
 
+some patches are required for the 128x32 version <<TODO>>
+
 `git clone git@github.com:ohait/jmy6xx.git`
 
 
