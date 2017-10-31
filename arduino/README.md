@@ -14,7 +14,7 @@ The server could (and probably should) integrate with your ILS (Integrated Libra
 
 ## Power
 
-the device consume ~210mA when active, and <10mA when standby
+the device consume ~210mA when active, and ~10mA when standby
 
 the 1200mAh LiPo battery should provide up to 6 hours of continuous scanning, and it will recharge in 10/12 hours
 
