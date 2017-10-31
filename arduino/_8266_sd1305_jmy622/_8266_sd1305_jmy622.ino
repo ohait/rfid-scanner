@@ -452,7 +452,7 @@ void sleep() {
   Serial.println("Zzzzz...");
   state = 0;
   shelf_reset();
-  WiFi.mode(WIFI_OFF);
+  //WiFi.mode(WIFI_OFF);
   yield();
   jmy622.idle();
   yield();
@@ -462,6 +462,7 @@ void sleep() {
   display.command(SSD1305_DISPLAYOFF);
   yield();
 }
+
 void wake_up() {
   toneOK();
   yield();
@@ -469,8 +470,8 @@ void wake_up() {
   display.clearDisplay();
   display.display();
   
-  yield();
-  WiFi.mode(WIFI_STA);
+  //yield();
+  //WiFi.mode(WIFI_STA);
   yield();
   idle_after = millis()+1000*IDLE_TIME;
   count_from_idle = 0;
