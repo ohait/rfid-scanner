@@ -12,16 +12,34 @@ It connects to a server via WiFi, and depends on it for the logic. IOW the devic
 
 The server could (and probably should) integrate with your ILS (Integrated Library System).
 
-## Shelves
+## Power
 
-The scanner will recognize rfid tags which contains specific `SHELF#<data>`, and use the give data as a mean for the server to know where the scanner is currently scanning.
+the device consume ~210mA when active, and ~10mA when standby
 
-The server might decide that one of the scanned items is misplaced, and send a message back to the scanner to play a sound and update the display with relevant information on which item specifically need to be picked up.
+the 1200mAh LiPo battery should provide up to 6 hours of continuous scanning, and it will recharge in 10/12 hours
 
-A momentary button can be used to either reset the shelf location (quick press) or perform a "check in" (hold, and scan again).
+## installation
 
-Check-In scans are implementation specific, but most likely it will inform the server, and the integrated ILS, that the user actually picked up the item.
+follow instruction here to install the board 
 
-## Other integration
+https://learn.adafruit.com/adafruit-feather-huzzah-esp8266/using-arduino-ide
 
-While the whole project is designed for libraries, I can't see why this couldn't be used differently.
+
+then install adafruit GFX for the oled display
+
+arduino ide => manage libraries => adafruit GFX
+
+
+also, you will need specific library for SSD1305 and the RFID module library:
+
+in `arduino/libraries/`
+
+`git clone git@github.com:adafruit/Adafruit_SSD1305_Library.git`
+
+and apply the `.patch` to the library
+
+also get this to talk with the RFID module
+
+`git clone git@github.com:ohait/jmy6xx.git`
+
+
