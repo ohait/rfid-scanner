@@ -3,6 +3,8 @@ use warnings;
 
 package RFIDScanner::Request;
 
+use Data::Dumper;
+
 sub _hexdump {
     my ($data) = @_;
     my $out = '';
@@ -30,17 +32,18 @@ sub _hexdump {
 sub new {
     my ($type, $data) = @_;
     $data = $data->raw_body if UNIVERSAL::isa($data, 'Plack::Request');
-    length($data) >= 40 or die "expected 40+ bytes, got: ".length($data); 
+    length($data) >= 20 or die "expected 20+ bytes, got: ".length($data);
 
+    $data =~ m{^\x42\x42};
     my $dev = join(':', map { sprintf("%02x", ord($_)); } split //, substr($data, 2, 6));
+
     my $shelf = substr($data, 8, 32);
-    $shelf =~ s{\0+$}{};
-    $data = substr($data, 40);
-    #print STDERR "DEV $dev => shelf: '$shelf'\n";
-    
+    $shelf =~ s{[\x00].*$}{};
+    $data = substr($data, 8+32);
+
     my $self = bless {
         dev => $dev,
-        shelf => $shelf,
+        init_shelf => $shelf,
         records => [],
     }, $type;
 
@@ -63,13 +66,14 @@ sub new {
         push @{$self->{records}}, $record;
 
         if (my $obj = $self->parse_record($record_data)) {
-            $record->{$_} //= $obj->{$_} for keys %$obj; 
+            $record->{$_} //= $obj->{$_} for keys %$obj;
         }
     }
 
     return $self;
 }
 
+# used for S24 standard
 sub _crc {
     my ($data) = @_;
 
@@ -92,25 +96,21 @@ sub _crc {
     return pack('v', $crc);
 }
 
-
 sub parse_record {
     my ($self, $data) = @_;
-    if ($data =~ m{^.\0+$}) { # only first byte set => empty
+    #warn _hexdump($data);
+    if ($data =~ m{^.?(SHELF\#)(?<shelf>.*)}) {
+        my $shelf = $+{shelf};
+        $shelf =~ s{\0}{}g;
         return {
-            type => 'empty',
+            type => 'shelf',
+            shelf => $shelf,
         };
     }
 
-    if ($data =~ m{^.?(SHELF\#)(?<shelf>.*)}) {
-        my $shelf = $+{shelf};
-        $shelf =~ s{\0+$}{};
-        return {
-            type => 'shelf',
-            shelf => $+{shelf},
-        };
-    }
-    if ($data =~
-        m{^ (?<before>.*?)
+    # Danish S24 standard
+    if ($data =~ m{^
+            (?<before>.*?)
             (?<data>
                 (?<d1>
                     (?<ver>.) # 4 bit version, 4 bit type (0=>buy, 1=>circ, 2=>no circ, 7=>throw, 8=>patroncard)
@@ -121,11 +121,12 @@ sub parse_record {
                 (?<crc>..)
                 (?<d2>
                     (?<country>[A-Z][A-Z])
+                    #(?<library>[\d\x00]*)
                     (?<library>[\d\x00]{11})
                 )
             )(?<after>.*)
         $}x
-    ) { 
+    ) {
         my %m = %+;
         my $ver = ord($+{ver});
         my $given_crc = unpack('H*', $+{crc});
@@ -135,21 +136,27 @@ sub parse_record {
         my $barcode = $m{barcode}; $barcode =~ s{\0}{}g;
         return {
             type => "item",
-                 vertype => $ver,
-                 item => [ord($m{nr}),ord($m{tot})],
-                 barcode => $barcode,
-                 country => $m{country},
-                 library => $library,
-                 _crc => unpack('H*', $m{crc}),
-                 _trim => {
-                     before => unpack('H*', $m{before}),
-                     after => unpack('H*', $m{after}),
-                 },
-                 #_data => unpack('H*',$m{data}),
+            vertype => $ver,
+            item => [ord($m{nr}),ord($m{tot})],
+            barcode => $barcode,
+            country => $m{country},
+            library => $library,
+            _crc => unpack('H*', $m{crc}),
+            _trim => {
+                before => unpack('H*', $m{before}),
+                after => unpack('H*', $m{after}),
+            },
+            #_data => unpack('H*',$m{data}),
         };
     }
 
-    Dump($data);
+    if ($data =~ m{^.\0+$}) { # only first byte set => empty
+        return {
+            type => 'empty',
+        };
+    }
+
+    #Dump($data);
     warn "can't parse ".Dumper($data);
     return {};
 }
