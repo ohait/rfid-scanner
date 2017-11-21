@@ -117,7 +117,7 @@ void update_display() {
       display.drawLine(wx-1,wy, wx-1,wy+4, WHITE);
       display.drawLine(wx-2,wy+3,wx-0, wy+3, WHITE);
     }
-  } else {
+  } else if (WiFi.status() == WL_CONNECTED) {
     int wifi = wifi_connect()*14/100;
     if (wifi>13) wifi=13;
     if (wifi<0) wifi=0;  
@@ -125,6 +125,12 @@ void update_display() {
     for (int i=0; i<display_cycle; i++) {
       display.drawPixel(wx-wifi_gfx[i*2], wy+wifi_gfx[i*2+1], WHITE);
     }
+  } else {
+    display_cycle %= 2;
+    if (display_cycle==0) {
+      display.drawLine(wx-2, wy, wx, wy+2, WHITE);
+      display.drawLine(wx, wy, wx-2, wy+2, WHITE);
+    } 
   }
   yield();
   display.display();
@@ -234,7 +240,7 @@ void img() {
 }
 
 void error(String msg) {
-  if (display_prio >= 9) return;
+  if (display_prio > 9) return;
   display_prio = 9;
   display_expire = millis()+1000*20;
   toneKO();
@@ -254,7 +260,7 @@ void error(String msg) {
 
 
 void info(String s) {
-  if (display_prio >= 1) return;
+  if (display_prio > 1) return;
   display_prio = 1;
   display_expire = millis()+1000*20;
 
@@ -541,7 +547,9 @@ long wifi_timeout = 0;
 int wifi_connect() {
   if (WiFi.status() == WL_CONNECTED) {
       int rssi = WiFi.RSSI();
-      rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
+      int rssi_min = -80;
+      int rssi_max = -40;
+      rssi = rssi < rssi_min ? 0 : rssi > rssi_max ? 100 : (rssi-rssi_min)*100/(rssi_max-rssi_min);
       return rssi;
   }
 
