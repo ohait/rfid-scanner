@@ -7,6 +7,9 @@
 extern "C" {
 #include "gpio.h"
 }
+extern "C" {
+  #include "user_interface.h"
+}
 WiFiClient client;
 #include <time.h>
 #include "autoupdate.h"
@@ -59,25 +62,20 @@ inline void shelf_reset() {
 // CURRENT STATE
 int state = 1; // 0 idle, 1 Inventory, 2 Checkin
 long epoch = 0;
-int wake = 0;
-long prev_checkin = 0;
+
 void checkin() {
-  if (state==0) wake=1;
+  idle_after = millis()+1000*IDLE_TIME; // extends the idle time
+  display_expire = 0; // clear the display
+
+  if (state==0) {
+    state = -1;
+    return;
+  }
   if (digitalRead(CHECKIN_PIN)==LOW) { // PRESS
-    long ago = millis() - prev_checkin;
-    if (ago>10) { // sometimes buttons are bouncing, so only at least 10 ms long
-      prev_checkin = millis();
-//      Serial.println(ago);
-      if (ago<500) {
-        shelf_reset();
-      }
-    }
     state = 2;
   } else {
     state = 1;
   }
-  idle_after = millis()+1000*IDLE_TIME; // extends the idle time
-  display_expire = 0; // clear the display
 }
 
 
@@ -263,6 +261,26 @@ void info(String s) {
   display.display();
 }
 
+void welcome() {
+  display_prio = 1;
+  display_expire = millis()+1000*5;
+
+  yield();
+  display.clearDisplay();
+  display.setTextSize(1);
+  //display.setFont(&Picopixel);
+  //display.setCursor(0,4);
+  display.setFont(NULL);
+  display.setCursor(0,0);
+  display.println("I'm Ready to scan");
+  display.setCursor(0,14);
+  display.println("Hold button down to");
+  display.setCursor(0,24);
+  display.println("Check-IN while scan");
+  yield();
+  display.display();
+}
+
 
 byte* queue_find(const byte* uid) {
   //Serial.print("queue search "); jmy622.hexprint(uid, 8); Serial.println();
@@ -366,7 +384,7 @@ int scan() {
       if (memcmp((char*)(record+i), "SHELF#", strlen("SHELF#"))) continue;
       i+= strlen("SHELF#");
       strncpy(shelf, (char*)(record+i), 32);
-      Serial.println(shelf);
+      //Serial.println(shelf);
       count_shelf = 0;
     }
   }
@@ -382,21 +400,35 @@ void setup() {
   pinMode(A0, INPUT);
 //  jmy622.debug = 3;
 
+  delay(100);
+  display.begin();
+  display.clearDisplay();
+  display.setRotation(2);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setFont(&Picopixel);
+  display.setCursor(0,4);
+  display.print("INIT... built ");
+  display.print(__DATE__);
+  display.print(" - ");
+  display.println(__TIME__);
+  display.display();
+
   toneOK();
   delay(200);
 
 
   attachInterrupt(digitalPinToInterrupt(CHECKIN_PIN), checkin, CHANGE);
-  display.begin();
 
   WiFi.mode(WIFI_STA);
-  WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
+//  WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
+  wifi_set_sleep_type(LIGHT_SLEEP_T);
   gpio_pin_wakeup_enable(GPIO_ID_PIN(CHECKIN_PIN), GPIO_PIN_INTR_ANYEDGE);
-  //wifi_set_sleep_type(LIGHT_SLEEP_T);
 //  WiFi.macAddress(mac);
 
   yield();
   delay(100);
+
 
   yield();
   Serial.println();
@@ -412,21 +444,10 @@ void setup() {
   send_buffer[1] = 0x42;
   WiFi.macAddress(send_buffer+2);
   send_buffer[8] = '\0'; // shelf
-  shelf_reset();
   queue = send_buffer+8+32;
+  shelf_reset();
   Serial.println(String("queue ")+(q_size/1024)+"Kb ("+(q_size/record_size)+" records)");
 
-  display.clearDisplay();
-  display.setRotation(2);
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setFont(&Picopixel);
-  display.setCursor(0,4);
-  display.print("INIT... built ");
-  display.print(__DATE__);
-  display.print(" - ");
-  display.println(__TIME__);
-  display.display();
 
   jmy622.info();
 
@@ -445,7 +466,9 @@ void setup() {
     software_update(&client, AUTOUPDATE_HOST, AUTOUPDATE_PORT, AUTOUPDATE_PATH);
   }
 
+  delay(200);
   toneOK();
+  welcome();
 }
 
 void sleep() {
@@ -464,6 +487,7 @@ void sleep() {
 }
 
 void wake_up() {
+  Serial.println("Waking up...");
   toneOK();
   yield();
   display.command(SSD1305_DISPLAYON);
@@ -478,16 +502,17 @@ void wake_up() {
 }
 
 void loop() {
+  if (state==-1) {
+    wake_up(); 
+    state = 1;
+  }
+  
   // IDLE LOOP?
   if (state==0) {
     delay(1000);
     return;
   }
 
-  if (wake) {
-    wake_up(); 
-    wake=0;
-  }
   if (millis() > idle_after) {
     sleep();
     return;
@@ -642,7 +667,7 @@ int wifi_recv() {
   for(;;) {
     String msg = client.readStringUntil('\n');
     if (!msg) break;
-//    Serial.println(msg);
+    Serial.println("received: "); Serial.println(msg);
 
     if (msg.equals("")) {
       // ignore empty strings
