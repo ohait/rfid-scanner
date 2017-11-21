@@ -72,13 +72,16 @@ int state = 1; // 0 idle, 1 Inventory, 2 Checkin
 long epoch = 0;
 
 void checkin() {
-  idle_after = millis()+1000*IDLE_TIME; // extends the idle time
+  long now = millis();
+  idle_after = now+1000*IDLE_TIME; // extends the idle time
   display_expire = 0; // clear the display
 
   if (state==0) {
     state = -1;
     return;
   }
+  
+  int prev = state;
   if (digitalRead(CHECKIN_PIN)==LOW) { // PRESS
     state = 2;
   } else {
@@ -187,7 +190,7 @@ void full_update_display() {
     display.setCursor(0,30);
     //int queue_full = q_pos *100 /q_size;
     display.print("buffer: ");
-    display.print(q_pos/record_size);
+    display.print((q_pos+record_size/2)/record_size);
     display.print("/");
     display.print(q_size/record_size);
 //    display.print(" (");
@@ -356,6 +359,7 @@ int scan() {
 
     Serial.print("ISO15693 ");jmy622.hexprint(uid, 8); Serial.println();
     jmy622.hexdump(buf, read_blocks*4);
+    Serial.println("END");
     
     if (!jmy622.iso15693_quiet()) break;
 
@@ -515,6 +519,8 @@ void wake_up() {
   count_from_idle = 0;
 }
 
+int prev_state = 0;
+long prev_press = 0;
 void loop() {
   if (state==-1) {
     wake_up(); 
@@ -532,9 +538,21 @@ void loop() {
     return;
   }
 
+  long now = millis();
+  if (prev_state != state) {
+//    Serial.printf("change %d - %d = %d\n", now, prev_press, now - prev_press);
+    if (state == 1) { // release
+      if (now - prev_press < 1000) {
+        shelf_reset();
+      }
+      prev_press = now;
+    }
+  }
+  prev_state = state;
+  
   if (scan()) {
     //Serial.println("-------------");
-    idle_after = millis()+1000*IDLE_TIME;
+    idle_after = now+1000*IDLE_TIME;
   } else {
     update_display();
     wifi_recv();
@@ -567,15 +585,22 @@ int wifi_connect() {
 #endif
 #endif
 
+  Serial.println("scanning WiFi networks...");
   int ct = WiFi.scanNetworks();
   for (int i=0; i<ct; i++) {
     yield();
     String ssid = WiFi.SSID(i);
     const char* pwd = wifi_pass(ssid.c_str());
-    if (!pwd) continue;
+    if (!pwd) {
+      Serial.printf("SSID '%s' unknown\n", ssid.c_str());
+      continue;
+    }
     int rssi = WiFi.RSSI(i);
     rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
-    if (rssi<10) continue;
+    if (rssi<10) {
+      Serial.printf("SSID '%s' is weak\n", ssid.c_str());
+      continue;
+    }
 
     WiFi.begin(ssid.c_str(), pwd);
     Serial.print("connecting to: "); Serial.println(ssid.c_str());
