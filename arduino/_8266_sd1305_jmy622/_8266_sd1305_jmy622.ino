@@ -57,6 +57,14 @@ int count_shelf = 0;
 
 inline void shelf_reset() {
   memset(shelf, 0, 32);
+
+  byte* record = queue+q_pos;
+
+  memset(record, 0, 8);
+  record[8] = 0; // flags
+  record[9] = 32; // size
+  memcpy(record+10, shelf, 32);
+  q_pos += 10 + 32;
 }
 
 // CURRENT STATE
@@ -708,6 +716,22 @@ int wifi_recv() {
       Serial.print("IMG current display prio is: "); Serial.println(display_prio);
       if (display_prio <= 5) {
         tonePICK();
+        display_prio = 5;
+        display_expire = millis()+1000*30;
+        img();
+      } else {
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+      }
+    }
+    else if (msg.equals("VIMG")) {
+      Serial.print("IMG current display prio is: "); Serial.println(display_prio);
+      if (display_prio <= 5) {
+        toneVERIFY();
         display_prio = 5;
         display_expire = millis()+1000*30;
         img();

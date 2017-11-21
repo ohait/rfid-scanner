@@ -40,6 +40,13 @@ inline void tonePICK() {
   noTone(BUZZER_PIN);
 }
 
+inline void toneVERIFY() {
+  tone(BUZZER_PIN, 600);  delay(10);
+  noTone(BUZZER_PIN);     delay(20);
+  tone(BUZZER_PIN, 300);  delay(20);
+  noTone(BUZZER_PIN);
+}
+
 inline void toneWAIT() {
   tone(BUZZER_PIN, 3000);  delay(100);
   tone(BUZZER_PIN, 500);  delay(200);
