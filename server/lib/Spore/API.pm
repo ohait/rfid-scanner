@@ -52,11 +52,66 @@ sub api_shelves {
         at => $self->epoch2iso(Time::HiRes::time()),
         results => [],
     };
+
     SELECT "ploc, count(distinct(item_id)) ct FROM tags WHERE instance = ? GROUP BY ploc"
     => [$self->{instance}] => sub {
         push @{$out->{results}}, {
             loc => ($_{ploc}//''),
             tags => $_{ct},
+        };
+    };
+
+    return $out;
+}
+
+sub api_shelf {
+    my ($self, $shelf) = @_;
+    $shelf =~ m{^[\w\.]*$} or die "400 Invalid shelf: '$shelf'";
+
+    my $out = {
+        at => $self->epoch2iso(Time::HiRes::time()),
+        shelf => $shelf,
+        results => [],
+    };
+
+    my %items;
+
+    SELECT "*, ploc_at at FROM tags LEFT JOIN items USING (instance, item_supplier, item_id)
+    WHERE instance = ? AND ploc = ? AND item_id IS NOT NULL
+    UNION
+    SELECT *, tloc_at at FROM tags LEFT JOIN items USING (instance, item_supplier, item_id)
+    WHERE instance = ? AND tloc = ? AND item_id IS NOT NULL
+    ORDER BY at DESC"
+    => [$self->{instance}, $shelf, $self->{instance}, $shelf] => sub {
+        my $json = $self->json_dec($_{json})//{};
+        delete $_{json};
+        my $item = $items{$_{instance}}->{$_{item_supplier}}->{$_{item_id}};
+        if (!$item) {
+            $items{$_{instance}}->{$_{item_supplier}}->{$_{item_id}} = $item = {
+                data => $json,
+                product_id => $_{product_id},
+                item_supplier => $_{item_supplier},
+                item_id => $_{item_id},
+                tags => [],
+                last_at => $self->epoch2iso($_{at}),
+            };
+            push @{$out->{results}}, $item;
+        }
+        push @{$item->{tags}}, {
+            rfid => $_{rfid},
+            permanent => {
+                loc => $_{ploc},
+                at => $self->epoch2iso($_{ploc_at}),
+                dev => $_{ploc_dev},
+            },
+            temporary => {
+                loc => $_{tloc},
+                at => $self->epoch2iso($_{tloc_at}),
+                dev => $_{tloc_dev},
+            },
+            data => {
+                base64 => encode_base64($_{data}, ''),
+            },
         };
     };
 
@@ -93,7 +148,6 @@ sub api_item {
 
     SELECT "* FROM tags WHERE instance = ? AND item_supplier = ? AND item_id = ?"
     => [$self->{instance}, $item_supplier, $item_id] => sub {
-        my $history = [];
         push @{$out->{response}->{tags}}, {
             rfid => $_{rfid},
             permanent => {
@@ -114,18 +168,6 @@ sub api_item {
 
     };
 
-    #for my $tag (@{$out->{response}->{tags}}) {
-    #    SELECT "* FROM history WHERE instance = ? AND rfid = ? ORDER BY at DESC limit 1000"
-    #    => [$self->{instance}, $tag->{rfid}] => sub {
-    #        push @{$tag->{history}}, {
-    #            dev => $_{dev},
-    #            at => $_{at},
-    #            action => $_{action},
-    #            type => $_{type},
-    #            loc => $_{shelf},
-    #        };
-    #    };
-    #}
     return $out;
 }
 
