@@ -144,11 +144,12 @@ sub api_item {
         last_seen => $self->epoch2iso($row{last_seen}),
         tags => [],
         meta => $self->json_dec($row{json}),
+        history => [],
     };
 
     SELECT "* FROM tags WHERE instance = ? AND item_supplier = ? AND item_id = ?"
     => [$self->{instance}, $item_supplier, $item_id] => sub {
-        push @{$out->{response}->{tags}}, {
+        my $tag = {
             rfid => $_{rfid},
             permanent => {
                 loc => $_{ploc},
@@ -165,7 +166,18 @@ sub api_item {
                 base64 => encode_base64($_{data}, ''),
             },
         };
+        push @{$out->{response}->{tags}}, $tag;
+    };
 
+    # TODO maybe move to another api? TODO group actions that are close in time
+    SELECT "* FROM history h JOIN tags t USING(instance, rfid) WHERE instance = ? AND item_supplier = ? AND item_id = ? ORDER BY at DESC" => [$self->{instance}, $item_supplier, $item_id] => sub {
+        push @{$out->{response}->{history}}, {
+            dev => $_{dev},
+            at => $self->epoch2iso($_{at}),
+            action => $_{action},
+            type => $_{type},
+            location => $_{shelf},
+        };
     };
 
     return $out;
