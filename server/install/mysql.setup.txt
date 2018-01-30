@@ -1,0 +1,13 @@
+
+
+as root, run mysql with:
+
+    create database rfid;
+    create user rfid identified by 'rfid';
+    grant all on rfid.* to 'rfid'@'localhost' identified by 'rfid';
+
+change the password with what you like most.
+
+then
+
+    mysql -u rfid -prfid rfid < mysql.setup.sql
