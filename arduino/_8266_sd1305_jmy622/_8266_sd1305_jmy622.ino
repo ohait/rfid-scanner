@@ -7,6 +7,9 @@
 extern "C" {
 #include "gpio.h"
 }
+extern "C" {
+  #include "user_interface.h"
+}
 WiFiClient client;
 #include <time.h>
 #include "autoupdate.h"
@@ -54,30 +57,36 @@ int count_shelf = 0;
 
 inline void shelf_reset() {
   memset(shelf, 0, 32);
+
+  byte* record = queue+q_pos;
+
+  memset(record, 0, 8);
+  record[8] = 0; // flags
+  record[9] = 32; // size
+  memcpy(record+10, shelf, 32);
+  q_pos += 10 + 32;
 }
 
 // CURRENT STATE
 int state = 1; // 0 idle, 1 Inventory, 2 Checkin
 long epoch = 0;
-int wake = 0;
-long prev_checkin = 0;
+
 void checkin() {
-  if (state==0) wake=1;
+  long now = millis();
+  idle_after = now+1000*IDLE_TIME; // extends the idle time
+  display_expire = 0; // clear the display
+
+  if (state==0) {
+    state = -1;
+    return;
+  }
+  
+  int prev = state;
   if (digitalRead(CHECKIN_PIN)==LOW) { // PRESS
-    long ago = millis() - prev_checkin;
-    if (ago>10) { // sometimes buttons are bouncing, so only at least 10 ms long
-      prev_checkin = millis();
-//      Serial.println(ago);
-      if (ago<500) {
-        shelf_reset();
-      }
-    }
     state = 2;
   } else {
     state = 1;
   }
-  idle_after = millis()+1000*IDLE_TIME; // extends the idle time
-  display_expire = 0; // clear the display
 }
 
 
@@ -111,7 +120,7 @@ void update_display() {
       display.drawLine(wx-1,wy, wx-1,wy+4, WHITE);
       display.drawLine(wx-2,wy+3,wx-0, wy+3, WHITE);
     }
-  } else {
+  } else if (WiFi.status() == WL_CONNECTED) {
     int wifi = wifi_connect()*14/100;
     if (wifi>13) wifi=13;
     if (wifi<0) wifi=0;  
@@ -119,6 +128,12 @@ void update_display() {
     for (int i=0; i<display_cycle; i++) {
       display.drawPixel(wx-wifi_gfx[i*2], wy+wifi_gfx[i*2+1], WHITE);
     }
+  } else {
+    display_cycle %= 2;
+    if (display_cycle==0) {
+      display.drawLine(wx-2, wy, wx, wy+2, WHITE);
+      display.drawLine(wx, wy, wx-2, wy+2, WHITE);
+    } 
   }
   yield();
   display.display();
@@ -175,7 +190,7 @@ void full_update_display() {
     display.setCursor(0,30);
     //int queue_full = q_pos *100 /q_size;
     display.print("buffer: ");
-    display.print(q_pos/record_size);
+    display.print((q_pos+record_size/2)/record_size);
     display.print("/");
     display.print(q_size/record_size);
 //    display.print(" (");
@@ -228,7 +243,7 @@ void img() {
 }
 
 void error(String msg) {
-  if (display_prio >= 9) return;
+  if (display_prio > 9) return;
   display_prio = 9;
   display_expire = millis()+1000*20;
   toneKO();
@@ -248,7 +263,7 @@ void error(String msg) {
 
 
 void info(String s) {
-  if (display_prio >= 1) return;
+  if (display_prio > 1) return;
   display_prio = 1;
   display_expire = millis()+1000*20;
 
@@ -259,6 +274,26 @@ void info(String s) {
   display.setFont();
   display.setCursor(0,0);
   display.println(s);
+  yield();
+  display.display();
+}
+
+void welcome() {
+  display_prio = 1;
+  display_expire = millis()+1000*5;
+
+  yield();
+  display.clearDisplay();
+  display.setTextSize(1);
+  //display.setFont(&Picopixel);
+  //display.setCursor(0,4);
+  display.setFont(NULL);
+  display.setCursor(0,0);
+  display.println("I'm Ready to scan");
+  display.setCursor(0,14);
+  display.println("Hold button down to");
+  display.setCursor(0,24);
+  display.println("Check-IN while scan");
   yield();
   display.display();
 }
@@ -324,6 +359,7 @@ int scan() {
 
     Serial.print("ISO15693 ");jmy622.hexprint(uid, 8); Serial.println();
     jmy622.hexdump(buf, read_blocks*4);
+    Serial.println("END");
     
     if (!jmy622.iso15693_quiet()) break;
 
@@ -366,7 +402,7 @@ int scan() {
       if (memcmp((char*)(record+i), "SHELF#", strlen("SHELF#"))) continue;
       i+= strlen("SHELF#");
       strncpy(shelf, (char*)(record+i), 32);
-      Serial.println(shelf);
+      //Serial.println(shelf);
       count_shelf = 0;
     }
   }
@@ -382,21 +418,35 @@ void setup() {
   pinMode(A0, INPUT);
 //  jmy622.debug = 3;
 
+  delay(100);
+  display.begin();
+  display.clearDisplay();
+  display.setRotation(2);
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setFont(&Picopixel);
+  display.setCursor(0,4);
+  display.print("INIT... built ");
+  display.print(__DATE__);
+  display.print(" - ");
+  display.println(__TIME__);
+  display.display();
+
   toneOK();
   delay(200);
 
 
   attachInterrupt(digitalPinToInterrupt(CHECKIN_PIN), checkin, CHANGE);
-  display.begin();
 
   WiFi.mode(WIFI_STA);
-  WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
+//  WiFi.setSleepMode(WIFI_LIGHT_SLEEP);
+  wifi_set_sleep_type(LIGHT_SLEEP_T);
   gpio_pin_wakeup_enable(GPIO_ID_PIN(CHECKIN_PIN), GPIO_PIN_INTR_ANYEDGE);
-  //wifi_set_sleep_type(LIGHT_SLEEP_T);
 //  WiFi.macAddress(mac);
 
   yield();
   delay(100);
+
 
   yield();
   Serial.println();
@@ -412,21 +462,10 @@ void setup() {
   send_buffer[1] = 0x42;
   WiFi.macAddress(send_buffer+2);
   send_buffer[8] = '\0'; // shelf
-  shelf_reset();
   queue = send_buffer+8+32;
+  shelf_reset();
   Serial.println(String("queue ")+(q_size/1024)+"Kb ("+(q_size/record_size)+" records)");
 
-  display.clearDisplay();
-  display.setRotation(2);
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setFont(&Picopixel);
-  display.setCursor(0,4);
-  display.print("INIT... built ");
-  display.print(__DATE__);
-  display.print(" - ");
-  display.println(__TIME__);
-  display.display();
 
   jmy622.info();
 
@@ -445,7 +484,9 @@ void setup() {
     software_update(&client, AUTOUPDATE_HOST, AUTOUPDATE_PORT, AUTOUPDATE_PATH);
   }
 
+  delay(200);
   toneOK();
+  welcome();
 }
 
 void sleep() {
@@ -464,6 +505,7 @@ void sleep() {
 }
 
 void wake_up() {
+  Serial.println("Waking up...");
   toneOK();
   yield();
   display.command(SSD1305_DISPLAYON);
@@ -477,25 +519,40 @@ void wake_up() {
   count_from_idle = 0;
 }
 
+int prev_state = 0;
+long prev_press = 0;
 void loop() {
+  if (state==-1) {
+    wake_up(); 
+    state = 1;
+  }
+  
   // IDLE LOOP?
   if (state==0) {
     delay(1000);
     return;
   }
 
-  if (wake) {
-    wake_up(); 
-    wake=0;
-  }
   if (millis() > idle_after) {
     sleep();
     return;
   }
 
+  long now = millis();
+  if (prev_state != state) {
+//    Serial.printf("change %d - %d = %d\n", now, prev_press, now - prev_press);
+    if (state == 1) { // release
+      if (now - prev_press < 1000) {
+        shelf_reset();
+      }
+      prev_press = now;
+    }
+  }
+  prev_state = state;
+  
   if (scan()) {
     //Serial.println("-------------");
-    idle_after = millis()+1000*IDLE_TIME;
+    idle_after = now+1000*IDLE_TIME;
   } else {
     update_display();
     wifi_recv();
@@ -508,7 +565,9 @@ long wifi_timeout = 0;
 int wifi_connect() {
   if (WiFi.status() == WL_CONNECTED) {
       int rssi = WiFi.RSSI();
-      rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
+      int rssi_min = -80;
+      int rssi_max = -40;
+      rssi = rssi < rssi_min ? 0 : rssi > rssi_max ? 100 : (rssi-rssi_min)*100/(rssi_max-rssi_min);
       return rssi;
   }
 
@@ -526,15 +585,22 @@ int wifi_connect() {
 #endif
 #endif
 
+  Serial.println("scanning WiFi networks...");
   int ct = WiFi.scanNetworks();
   for (int i=0; i<ct; i++) {
     yield();
     String ssid = WiFi.SSID(i);
     const char* pwd = wifi_pass(ssid.c_str());
-    if (!pwd) continue;
+    if (!pwd) {
+      Serial.printf("SSID '%s' unknown\n", ssid.c_str());
+      continue;
+    }
     int rssi = WiFi.RSSI(i);
     rssi = rssi < -90 ? 0 : rssi > -50 ? 100 : (rssi+90)*100/(90-50);
-    if (rssi<10) continue;
+    if (rssi<10) {
+      Serial.printf("SSID '%s' is weak\n", ssid.c_str());
+      continue;
+    }
 
     WiFi.begin(ssid.c_str(), pwd);
     Serial.print("connecting to: "); Serial.println(ssid.c_str());
@@ -642,7 +708,7 @@ int wifi_recv() {
   for(;;) {
     String msg = client.readStringUntil('\n');
     if (!msg) break;
-//    Serial.println(msg);
+    Serial.println("received: "); Serial.println(msg);
 
     if (msg.equals("")) {
       // ignore empty strings
@@ -683,6 +749,22 @@ int wifi_recv() {
       Serial.print("IMG current display prio is: "); Serial.println(display_prio);
       if (display_prio <= 5) {
         tonePICK();
+        display_prio = 5;
+        display_expire = millis()+1000*30;
+        img();
+      } else {
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+        client.readStringUntil('\n');
+      }
+    }
+    else if (msg.equals("VIMG")) {
+      Serial.print("IMG current display prio is: "); Serial.println(display_prio);
+      if (display_prio <= 5) {
+        toneVERIFY();
         display_prio = 5;
         display_expire = millis()+1000*30;
         img();
