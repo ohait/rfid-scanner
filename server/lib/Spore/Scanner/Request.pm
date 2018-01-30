@@ -1,9 +1,10 @@
 use strict;
 use warnings;
 
-package RFIDScanner::Request;
+package Spore::Scanner::Request;
 
 use Data::Dumper;
+use Spore::Utils;
 
 sub _hexdump {
     my ($data) = @_;
@@ -28,13 +29,12 @@ sub _hexdump {
     return $out;
 }
 
-
 sub new {
-    my ($type, $data) = @_;
+    my ($type, $data, $uri, $headers, $hook) = @_;
     $data = $data->raw_body if UNIVERSAL::isa($data, 'Plack::Request');
     length($data) >= 20 or die "expected 20+ bytes, got: ".length($data);
 
-    $data =~ m{^\x42\x42};
+    $data =~ m{^\x42\x42} or die "invalid data: magic number missing";
     my $dev = join(':', map { sprintf("%02x", ord($_)); } split //, substr($data, 2, 6));
 
     my $shelf = substr($data, 8, 32);
@@ -49,28 +49,47 @@ sub new {
 
     BLOCK:
     while(length($data)>=9) {
+        #print "R HEAD:\n".hexdump(substr($data, 0, 10));
         my $_rfid = substr($data, 0, 8);
         my $rfid = join(':', map { sprintf("%02x", ord($_)); } split //, $_rfid);
         my $flags = ord(substr($data, 8, 1));
         my $len = ord(substr($data, 9, 1));
         my $record_data = substr($data, 10, $len);
+        #print "R BODY:\n".hexdump($record_data);
         $data = substr($data, 10+$len);
         #print STDERR "$rfid => (f: $flags) $len bytes\n";
 
         my $record =  {
+            len => $len,
             rfid => $rfid,
             raw_rfid => $_rfid,
             flags => $flags,
             data => $record_data,
         };
-        push @{$self->{records}}, $record;
 
         if (my $obj = $self->parse_record($record_data)) {
             $record->{$_} //= $obj->{$_} for keys %$obj;
+            if ($obj->{type} eq 'shelf') {
+                $shelf = $record->{shelf};
+            } else {
+                $record->{shelf}//=$shelf;
+            }
+        }
+        if ('CODE' eq ref $hook) {
+            my @out = $hook->($record);
+            warn "expected hash" if scalar grep { ref ne 'HASH' } @out;
+            push @{$self->{records}}, @out;
+        } else {
+            push @{$self->{records}}, $record;
         }
     }
 
     return $self;
+}
+
+sub records {
+    my ($self) = @_;
+    return @{$self->{records}};
 }
 
 # used for S24 standard
@@ -138,6 +157,8 @@ sub parse_record {
             type => "item",
             vertype => $ver,
             item => [ord($m{nr}),ord($m{tot})],
+            item_supplier => $m{country}.":".$library,
+            item_id => $barcode,
             barcode => $barcode,
             country => $m{country},
             library => $library,
