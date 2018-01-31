@@ -22,6 +22,7 @@ GET /json/shelves/
       ...
    ]
 }
+```
 
 ### `/json/shelf/x.y.z`
 ```
