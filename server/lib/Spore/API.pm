@@ -118,6 +118,55 @@ sub api_shelf {
     return $out;
 }
 
+sub api_product {
+    my ($self, $item_supplier, $product_id) = @_;
+    $item_supplier or die "400 Missing item_supplier";
+    $product_id or die "400 Missing product_id";
+
+    my $out = {
+        item_supplier => $item_supplier,
+        product_id => $product_id,
+        at => $self->epoch2iso(Time::HiRes::time()),
+        response => [],
+    };
+
+    SELECT "* FROM items WHERE instance = ? AND item_supplier = ? AND product_id = ?"
+    => [$self->{instance}, $item_supplier, $product_id] => sub {
+        push @{$out->{response}}, {
+            item_supplier => $_{item_supplier},
+            item_id => $_{item_id},
+            product_id => $_{product_id},
+            last_seen => $self->epoch2iso($_{last_seen}),
+            meta => $self->json_dec($_{json}),
+            tags => [],
+        };
+    };
+
+    for my $item (@{$out->{response}}) {
+        SELECT "* FROM tags WHERE instance = ? AND item_supplier = ? AND item_id = ?"
+        => [$self->{instance}, $item_supplier, $item->{item_id}] => sub {
+            push @{$item->{tags}}, {
+                rfid => $_{rfid},
+                permanent => {
+                    loc => $_{ploc},
+                    at => $self->epoch2iso($_{ploc_at}),
+                    dev => $_{ploc_dev},
+                },
+                temporary => {
+                    loc => $_{tloc},
+                    at => $self->epoch2iso($_{tloc_at}),
+                    dev => $_{tloc_dev},
+                },
+                data => {
+                    base64 => encode_base64($_{data}, ''),
+                },
+            };
+        }
+    }
+
+    return $out;
+}
+
 sub api_item {
     my ($self, $item_supplier, $item_id) = @_;
     $item_supplier or die "400 Missing item_supplier";
@@ -133,6 +182,7 @@ sub api_item {
 
     if (not %row) {
         # AUTOVIVIFY?
+        # not unless needed
     }
 
     %row or die "404 Not Found: item('$item_supplier', '$item_id')";

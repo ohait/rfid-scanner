@@ -49,6 +49,9 @@ sub process {
                     warn "dest '$record->{dest}' => '$tag{ploc}'";
                     $record->{dest} = $tag{ploc};
                 }
+                elsif (my $dloc = $record->{meta}->{default_loc}) {
+                    $record->{dest} = $dloc;
+                }
             }
 
             $self->append($record, $dev, $res);

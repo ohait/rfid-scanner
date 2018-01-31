@@ -6,6 +6,22 @@ use DBI::Sugar;
 use Spore::ILS;
 use Spore::App;
 
+use utf8;
+
+my %ccode = (
+    1    => 'pub.red',
+    2    => 'pub.lilla',
+    3    => 'pub.yellow',
+    4    => 'pub.green',
+    5    => 'pub.blue',
+    m    => 'stack',
+    '1m' => 'stack.red',
+    '2m' => 'stack.lilla',
+    '3m' => 'stack.yellow',
+    '4m' => 'stack.green',
+    '5m' => 'stack.blue',
+);
+
 # setup the ILS adaptor
 $::ILS = Spore::ILS->new(
     api => 'https://intra.deichman.no/api/v1/location',
@@ -24,7 +40,15 @@ $::ILS = Spore::ILS->new(
         $cn_loc =~ s{(T|b|u| |^)(q|r\+?|qr\+?)}{$1} and $cn_ext .="$2"; # TODO
         $cn_loc =~ s{\s+}{ }g; $cn_loc =~ s{^ }{}; $cn_loc =~ s{ $}{};
         my $cn = join(',', $cn_loc, $cn_dew, $cn_aut, $cn_ext);
+
+        my $default_loc = $_->{homebranch} // $_->{branch};
+        if (my $ccode = $_->{ccode}) {
+            $ccode = $ccode{$ccode} // $ccode; # use the map
+            $default_loc .= ".$ccode";
+        }
+
         return (
+            default_loc => $default_loc,
             callnumber => $cn,
             title => $_->{title} // '',
             author => $_->{author} // '',

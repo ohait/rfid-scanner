@@ -48,7 +48,7 @@ sub sync {
     my $res = $self->{ua}->request($req);
     $res->is_success or die "ILS: ".$res->status_line."\n\t".Dumper($res);
     my $out = $self->{json}->decode($res->content);
-    warn Dumper($out)."...";
+    #warn Dumper($out)."...";
 
     for (@{$out->{items}}) {
         next unless $_;
@@ -59,9 +59,6 @@ sub sync {
             $item->{product_id} = $_->{biblionumber};
             $item->{dest} = $_->{dest} // $_->{shelf} // $_->{loc};
             my $meta = $item->{meta} = {};
-#            $item->{meta}->{copynumber} = $_->{copynumber};
-#            $item->{meta}->{title} = $_->{title};
-#            $item->{meta}->{author} = $_->{author};
             # TODO HOLDS?
             if ('CODE' eq ref $self->{decorator}) {
                 local $_ = {%$_};
