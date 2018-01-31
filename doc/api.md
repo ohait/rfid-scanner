@@ -71,15 +71,69 @@ GET /json/shelf/flam.pub
                   loc: ""
                }
             },
-            // more entries if multiple tags for an item
+            // more tags if any
          ]
       },
-      [...]
+      // more items
    ]
 }
 ```
 
 ### `/json/product/NO:1234/1234`
+```
+{
+   at: {
+      epoch: 1517400746.49713,
+      iso8601: "2018-01-31T12:12:26"
+   },
+   item_supplier: "NO:02030000",
+   product_id: "34815",
+   response: [
+      {
+         item_id: "03010034815003",
+         item_supplier: "NO:02030000",
+         last_seen: {
+            epoch: "1517321892.89494",
+            iso8601: "2018-01-30T14:18:12"
+         },
+         meta: {
+            author: "Ottesen-Jensen, Elise",
+            biblionumber: "34815",
+            callnumber: ",612.6,Ott,",
+            copynumber: "3",
+            title: "Når barnet spør"
+         },
+         product_id: "34815",
+         tags: [
+            {
+               data: {
+                  base64: "EQICMDMwMTAwMzQ4MTUwMDMAADgCTk8wMjAzMDAwMAAAAAAA"
+               },
+               permanent: {
+                  at: {
+                     epoch: "1517320059.55546",
+                     iso8601: "2018-01-30T13:47:39"
+                  },
+                  dev: "5c:cf:7f:3a:37:45",
+                  loc: "hutl.stack.foo"
+               },
+               rfid: "e0:04:01:50:5a:89:bd:e3",
+               temporary: {
+                  at: {
+                     epoch: "1517321892.8167",
+                     iso8601: "2018-01-30T14:18:12"
+                  },
+                  dev: "5c:cf:7f:3a:37:45",
+                  loc: ""
+               }
+            },
+            // more tags if any
+         ]
+      },
+      // more items here ...
+   ]
+}
+```
 
 ### `/json/item/NO:1234/0123456789`
 ```
