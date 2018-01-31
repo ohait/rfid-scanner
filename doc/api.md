@@ -79,10 +79,7 @@ GET /json/shelf/flam.pub
 }
 ```
 
-### `/json/product/1234`
-```
-GET /json/bibnum/1591338
-```
+### `/json/product/NO:1234/1234`
 
 ### `/json/item/NO:1234/0123456789`
 ```
