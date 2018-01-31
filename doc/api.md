@@ -160,9 +160,6 @@ GET /api/item/NO:02030000/03010034815003
    }
 }
 ```
-returns the last entries in the log for the given device
-
-data can be different for different device, and will be purged when needed
 
 ### `/json/tag/e0:01:23:45:67:89:ab:cd`
 
