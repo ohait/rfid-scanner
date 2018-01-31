@@ -2,223 +2,168 @@
 
 The server exposes APIs for querying the status of shelves, items or devices.
 
-## Common practices
+### `/json/shelves/`
+```
+GET /json/shelves/
+{
+   at: {
+      epoch: 1517398770.60357,
+      iso8601: "2018-01-31T11:39:30"
+   },
+   results: [
+      {
+         loc: "x.y.z",
+         tags: "123"
+      },
+      {
+         loc: "hutl.stack.foo",
+         tags: "2"
+      },
+      ...
+   ]
+}
 
-* Timestamps are not in ISO8601 but instead in seconds from 1st Jan 1970 UTC, with decimals when available.
-* All responses will be a json object, with execution timestamp as `requeste_at`
-
-### `/json/shelf/`
+### `/json/shelf/x.y.z`
 ```
 GET /json/shelf/flam.pub
 {
-   "parent" : "flam",
-   "path" : "/json/shelf/flam.pub",
-   "requested_at" : 1508931322.6837,
-   "children" : [
+   at: {
+      epoch: 1517398904.08518,
+      iso8601: "2018-01-31T11:41:44"
+   },
+   results: [
       {
-         "count" : 0,
-         "inherited" : 5515,
-         "name" : "flam.pub.2u"
-      },
-      {
-         "count" : 0,
-         "inherited" : 1315,
-         "name" : "flam.pub.3"
-      }
-   ],
-   "shelf" : "flam.pub",
-   "results" : [
-      {
-         "author" : "Hagerup, Inger",
-         "barcode" : "03010201744011",
-         "bibnum" : 201744,
-         "cn" : "D Hag",
-         "last_at" : 1508774441,
-         "last_dev" : "5c:cf:7f:f0:ae:34",
-         "rfid" : "e0:04:01:00:43:56:a0:ab",
-         "shelf" : "flam.pub.3.d4",
-         "shelf_at" : 1508774441,
-         "shelf_dev" : "5c:cf:7f:f0:ae:34",
-         "temp" : "flam.pub.3.d4",
-         "temp_at" : 1508774441,
-         "title" : "Samlede dikt"
+         data: {
+            author: "Ottesen-Jensen, Elise",
+            biblionumber: "34815",
+            callnumber: ",612.6,Ott,",
+            copynumber: "3",
+            title: "Når barnet spør"
+         },
+         item_id: "03010034815003",
+         item_supplier: "NO:02030000",
+         last_at: {
+            epoch: "1517320059.55546",
+            iso8601: "2018-01-30T13:47:39"
+         },
+         product_id: "34815",
+         tags: [
+            {
+               data: {
+                  base64: "EQICMDMwMTAwMzQ4MTUwMDMAADgCTk8wMjAzMDAwMAAAAAAA"
+               },
+               permanent: {
+                  at: {
+                     epoch: "1517320059.55546",
+                     iso8601: "2018-01-30T13:47:39"
+                  },
+                  dev: "5c:cf:7f:3a:37:45",
+                  loc: "hutl.stack.foo"
+               },
+               rfid: "e0:04:01:50:5a:89:bd:e3",
+               temporary: {
+                  at: {
+                     epoch: "1517321892.8167",
+                     iso8601: "2018-01-30T14:18:12"
+                  },
+                  dev: "5c:cf:7f:3a:37:45",
+                  loc: ""
+               }
+            },
+            // more entries if multiple tags for an item
+         ]
       },
       [...]
    ]
 }
 ```
 
-for the given `shelf`, it returns all the books that belong to that shelf (or subshelves), last seen first.
-
-it also show the immediate sublevel of shelves if available, with item counters.
-
-`count` is the number of items on that shelf, while `inherited` are the items in shelves which are subshelves of the shelf.
-
-## `/json/bibnum/`
+## `/json/product/1234`
 ```
 GET /json/bibnum/1591338
+```
+
+### `/json/item/NO:1234/0123456789`
+```
+GET /api/item/NO:02030000/03010034815003
 {
-   "path" : "/json/bibnum/1591338",
-   "requested_at" : 1508931576.67009,
-   "results" : {
-      "03011591338003" : null,
-      "03011591338006" : "flam.pub.3.c1",
-      "03011591338007" : null,
-      "03011591338012" : null,
-      "03011591338013" : null,
-      "03011591338014" : null,
-      "03011591338017" : null
+   at: {
+      epoch: 1517399164.71528,
+      iso8601: "2018-01-31T11:46:04"
    },
-   "type" : "bibnum"
-}
-```
-returns all the known barcodes that belong to the given biblionumber, and the shelf they belong to
-
-TODO! this API might change in the future to accomodate permanent/temporary locations
-
-### `/json/dev/`
-```
-{
-   "dev" : "5c:cf:7f:f0:ae:34",
-   "path" : "/json/dev/5c:cf:7f:f0:ae:34",
-   "requested_at" : 1508932281.21636,
-   "results" : [
-      {
-         "action" : "PICK (pickup)",
-         "at" : 1508774441,
-         "data" : "\u0011\u0001\u000130119116637816\u0000\u0000cNO02030000\u0000\u0000\u0000\u0000\u0000",
-         "rfid" : "e0:04:01:50:5a:89:94:b6",
-         "shelf" : "flam.pub.3.d4",
-         "type" : null
+   item_id: "03010034815003",
+   item_supplier: "NO:02030000",
+   response: {
+      history: [
+         {
+            action: null,
+            at: {
+               epoch: "1517321892.89494",
+               iso8601: "2018-01-30T14:18:12"
+            },
+            dev: "5c:cf:7f:3a:37:45",
+            location: "",
+            type: null
+         },
+         {
+            action: null,
+            at: {
+               epoch: "1517321892.89213",
+               iso8601: "2018-01-30T14:18:12"
+            },
+            dev: "5c:cf:7f:3a:37:45",
+            location: "",
+            type: null
+         },
+         [...]
+      ],
+      item_id: "03010034815003",
+      item_supplier: "NO:02030000",
+      last_seen: {
+         epoch: "1517321892.89494",
+         iso8601: "2018-01-30T14:18:12"
       },
-      {
-         "action" : null,
-         "at" : 1508774441,
-         "data" : "\u0011\u0001\u00011003011681558012\f×NO02030000\u0000\u0000\u0000\u0000\u0000",
-         "rfid" : "e0:04:01:50:4e:90:8a:dd",
-         "shelf" : "flam.pub.3.d4",
-         "type" : null
+      meta: {
+         author: "Ottesen-Jensen, Elise",
+         biblionumber: "34815",
+         callnumber: ",612.6,Ott,",
+         copynumber: "3",
+         title: "Når barnet spør"
       },
-[...]
-   ]
+      product_id: "34815",
+      tags: [
+         {
+            data: {
+               base64: "EQICMDMwMTAwMzQ4MTUwMDMAADgCTk8wMjAzMDAwMAAAAAAA"
+            },
+            permanent: {
+               at: {
+                  epoch: "1517320059.55546",
+                  iso8601: "2018-01-30T13:47:39"
+               },
+               dev: "5c:cf:7f:3a:37:45",
+               loc: "hutl.stack.foo"
+            },
+            rfid: "e0:04:01:50:5a:89:bd:e3",
+            temporary: {
+               at: {
+                  epoch: "1517321892.8167",
+                  iso8601: "2018-01-30T14:18:12"
+               },
+               dev: "5c:cf:7f:3a:37:45",
+               loc: ""
+            }
+         },
+         [...]
+      ]
+   }
 }
 ```
 returns the last entries in the log for the given device
 
 data can be different for different device, and will be purged when needed
 
-### `/json/tag/`
+### `/json/tag/e0:01:23:45:67:89:ab:cd`
 
+### `/json/dev/e0:00:11:22:33:44`
 
-```
-GET /json/tag/e0:04:01:50:4e:94:06:ec
-{
-   "entry" : {
-      "barcode" : "03011591338006",
-      "history" : [
-         {
-            "action" : null,
-            "at" : 1508783227.79596,
-            "data" : "{\"sender\":\"tagvision_sip_proxy\",\"branch\":\"flam\",\"client_IP\":\"10.172.15.7\",\"barcode\":\"03011591338006\",\"sip_message_type\":\"MsgReqCheckout\"}",
-            "dev" : "flam.tagvision_sip_proxy.10.172.15.7",
-            "shelf" : "flam.auto.out",
-            "type" : "MsgReqCheckout"
-         }, 
-         {
-            "action" : null,
-            "at" : 1508771570,
-            "data" : "\u0011\u0001\u00011003011591338006/\u0003NO02030000\u0000\u0000\u0000\u0000\u0000",
-            "dev" : "5c:cf:7f:f0:ae:34",
-            "shelf" : "flam.pub.3.c1",
-            "type" : null
-         }, 
-         {
-            "action" : null,
-            "at" : 1503658244.07074,
-            "data" : null,
-            "dev" : "flam.tagvision_sip_proxy.10.172.15.7",
-            "rfid" : "e0:04:01:50:4e:94:06:ec",
-            "shelf" : null,
-            "type" : "MsgReqCheckout"
-         },
-         {
-            "action" : null,
-            "at" : 1503387770.81755,
-            "data" : null,
-            "dev" : "flam.rfidhub.10.172.15.102",
-            "rfid" : "e0:04:01:50:4e:94:06:ec",
-            "shelf" : null,
-            "type" : "MsgReqCheckin"
-         }
-      ],
-      "last_at" : 1508783227.7958,
-      "last_dev" : "flam.tagvision_sip_proxy.10.172.15.7",
-      "rfid" : "e0:04:01:50:4e:94:06:ec",
-      "shelf" : "flam.pub.3.c1",
-      "shelf_at" : 1508771572,
-      "shelf_dev" : "5c:cf:7f:f0:ae:34",
-      "temp" : "flam.auto.out",
-      "temp_at" : 1508783227.7958
-   },
-   "path" : "/json/tag/e0:04:01:50:4e:94:06:ec",
-   "requested_at" : 1508932506.04825,
-   "type" : "tag_history"
-}
-```
-
-returns the last entries of the log for a give rfid tag
-
-### `/json/<barcode>` 
-```
-GET /json/
-{
-   "after" : [],
-   "before" : [],
-   "entry" : {
-      "author" : "Henriksen, Levi",
-      "barcode" : "03011591338006",
-      "bibnum" : 1591338,
-      "cn" : "dc CD Hen",
-      "last_at" : 1508783227.7958,
-      "last_dev" : "flam.tagvision_sip_proxy.10.172.15.7",
-      "pubid" : "pe9e41ee6302d24a3f8c85d8671804333",
-      "rfid" : "e0:04:01:50:4e:94:06:ec",
-      "shelf" : "flam.pub.3.c1",
-      "shelf_at" : 1508771572,
-      "shelf_dev" : "5c:cf:7f:f0:ae:34",
-      "temp" : "flam.auto.out",
-      "temp_at" : 1508783227.7958,
-      "thumb" : "https://static.deichman.no/thumb/pe9e41ee6302d24a3f8c85d8671804333.jpg",
-      "title" : "Harpesang"
-   }, 
-   "history" : [
-      {
-         "action" : null,
-         "at" : 1508783227.79596,
-         "dev" : "flam.tagvision_sip_proxy.10.172.15.7",
-         "rfid" : "e0:04:01:50:4e:94:06:ec",
-         "type" : "MsgReqCheckout"
-      }, 
-      {
-         "action" : null,
-         "at" : 1508771572,
-         "dev" : "5c:cf:7f:f0:ae:34",
-         "rfid" : "e0:04:01:50:4e:94:06:ec",
-         "type" : null
-      }, 
-
-      {
-         "action" : null,
-         "at" : 1501668630.12409,
-         "dev" : "flam.tagvision_sip_proxy.10.172.15.7",
-         "rfid" : "e0:04:01:50:4e:94:06:ec",
-         "type" : "MsgReqCheckout"
-      }
-   ],
-   "path" : "/json/03011591338006",
-   "requested_at" : 1508932697.15131,
-   "type" : "nearby"
-}
-```
-
-returns all the details for a given barcode
