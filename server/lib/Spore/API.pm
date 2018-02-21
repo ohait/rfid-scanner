@@ -138,31 +138,31 @@ sub api_product {
             product_id => $_{product_id},
             last_seen => $self->epoch2iso($_{last_seen}),
             meta => $self->json_dec($_{json}),
-            tags => [],
+            #tags => [],
         };
     };
 
-    for my $item (@{$out->{response}}) {
-        SELECT "* FROM tags WHERE instance = ? AND item_supplier = ? AND item_id = ?"
-        => [$self->{instance}, $item_supplier, $item->{item_id}] => sub {
-            push @{$item->{tags}}, {
-                rfid => $_{rfid},
-                permanent => {
-                    loc => $_{ploc},
-                    at => $self->epoch2iso($_{ploc_at}),
-                    dev => $_{ploc_dev},
-                },
-                temporary => {
-                    loc => $_{tloc},
-                    at => $self->epoch2iso($_{tloc_at}),
-                    dev => $_{tloc_dev},
-                },
-                data => {
-                    base64 => encode_base64($_{data}, ''),
-                },
-            };
-        }
-    }
+    #for my $item (@{$out->{response}}) {
+    #    SELECT "* FROM tags WHERE instance = ? AND item_supplier = ? AND item_id = ?"
+    #    => [$self->{instance}, $item_supplier, $item->{item_id}] => sub {
+    #        push @{$item->{tags}}, {
+    #            rfid => $_{rfid},
+    #            permanent => {
+    #                loc => $_{ploc},
+    #                at => $self->epoch2iso($_{ploc_at}),
+    #                dev => $_{ploc_dev},
+    #            },
+    #            temporary => {
+    #                loc => $_{tloc},
+    #                at => $self->epoch2iso($_{tloc_at}),
+    #                dev => $_{tloc_dev},
+    #            },
+    #            data => {
+    #                base64 => encode_base64($_{data}, ''),
+    #            },
+    #        };
+    #    }
+    #}
 
     return $out;
 }
@@ -220,16 +220,39 @@ sub api_item {
     };
 
     # TODO maybe move to another api? TODO group actions that are close in time
-    SELECT "* FROM history h JOIN tags t USING(instance, rfid) WHERE instance = ? AND item_supplier = ? AND item_id = ? ORDER BY at DESC" => [$self->{instance}, $item_supplier, $item_id] => sub {
-        push @{$out->{response}->{history}}, {
+    SELECT "* FROM history h WHERE instance = ? AND item_supplier = ? AND item_id = ? ORDER BY at DESC" => [$self->{instance}, $item_supplier, $item_id] => sub {
+        my $row = {
             dev => $_{dev},
             at => $self->epoch2iso($_{at}),
-            action => $_{action},
+            actions => [split /, +/, $_{actions}//''],
             type => $_{type},
             location => $_{shelf},
+            rfid => $_{rfid},
         };
+        delete $row->{$_} for grep { not defined $row->{$_} } keys %$row;
+        push @{$out->{response}->{history}}, $row;
     };
 
+    return $out;
+}
+
+sub api_search {
+    my ($self) = @_;
+    my $q = $_->param('q') or die "404 missing {q} parameter";
+
+
+    my @results = SELECT "* FROM items_idx JOIN items USING(instance, item_supplier, item_id) WHERE word LIKE ? ORDER BY last_seen DESC LIMIT 10"
+    => [$q."%"] => sub {
+        my $meta = $self->json_dec($_{json});
+        delete $_{json};
+        return {%_, meta => $meta};
+    };
+
+    my $out = {
+        q => $q,
+        at => $self->epoch2iso(Time::HiRes::time()),
+        results => \@results,
+    };
     return $out;
 }
 

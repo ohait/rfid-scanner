@@ -52,6 +52,7 @@ sub new {
         #print "R HEAD:\n".hexdump(substr($data, 0, 10));
         my $_rfid = substr($data, 0, 8);
         my $rfid = join(':', map { sprintf("%02x", ord($_)); } split //, $_rfid);
+        $rfid = undef if $rfid eq '00:00:00:00:00:00:00:00';
         my $flags = ord(substr($data, 8, 1));
         my $len = ord(substr($data, 9, 1));
         my $record_data = substr($data, 10, $len);

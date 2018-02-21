@@ -49,13 +49,15 @@ CREATE TABLE devices (
 CREATE TABLE history (dev varchar(32),
     instance int default 0,
     at double,
+    item_supplier varchar(24),
+    item_id varchar(24),
     rfid varchar(32),
-    action varchar(80),
-    type varchar(32),
-    shelf varchar(32)
+    actions varchar(80),
+    loc varchar(32)
     );
 CREATE INDEX history_at on history(instance, at);
 CREATE INDEX history_dev on history(instance, dev, at);
+CREATE INDEX history_item on history(instance, item_supplier, item_id, at);
 CREATE INDEX history_rfid on history(instance, rfid, at);
 
 CREATE TABLE location_tree (

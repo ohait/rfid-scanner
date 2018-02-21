@@ -34,10 +34,13 @@ sub dispatch {
     }
 
     if ($route eq 'arduino') {
-        return $::APP->arduino($req->uri, $req->raw_body, $req->headers);
+        return $::APP->arduino($req->uri, $req->raw_body, $req);
     }
     if ($route eq 'api') {
-        return $::APP->api($path, $req->raw_body, $req->headers);
+        return $::APP->api($path, $req->raw_body, $req);
+    }
+    if ($route eq 'hub') {
+        return $::APP->hub($path, $req->raw_body, $req);
     }
     die "404 Not Found ".$req->path;
 }
@@ -71,6 +74,8 @@ sub {
         else {
             # JSON!
             my $r = $req->new_response(200);
+            $r->header("Cache-Control" => "private");
+            $r->header("Access-Control-Allow-Origin", "*");
             $r->header("Content-Type" => "application/json");
             $r->body($JSON->encode($res));
             $res = $r;
