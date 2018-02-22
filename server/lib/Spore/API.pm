@@ -73,10 +73,17 @@ sub api_shelves {
         results => [],
     };
 
-    SELECT "ploc, count(distinct(item_id)) ct FROM tags WHERE instance = ? GROUP BY ploc"
+    SELECT "ploc, count(distinct(item_id)) ct FROM tags WHERE instance = ? AND ploc IS NOT NULL GROUP BY ploc ORDER BY ploc"
     => [$self->{instance}] => sub {
         push @{$out->{results}}, {
             loc => ($_{ploc}//''),
+            tags => $_{ct},
+        };
+    };
+    SELECT "tloc, count(distinct(item_id)) ct FROM tags WHERE instance = ? AND ploc IS NULL GROUP BY tloc ORDER BY tloc"
+    => [$self->{instance}] => sub {
+        push @{$out->{results}}, {
+            loc => ($_{tloc}//''),
             tags => $_{ct},
         };
     };
