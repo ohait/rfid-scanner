@@ -71,7 +71,8 @@ sub api {
 
     my (undef, $method, @arguments) = split /\//, $path;
 
-    $method =~ m{^\w+$} or die "400 invalid api method: '$method'";
+    $method or die "404 api method missing";
+    $method =~ m{^\w+$} or die "404 api method not found: '$method'";
 
     my $m = "api_$method";
     $self->{api}->can($m) or die "404 api method not found: '$method'";
@@ -115,25 +116,25 @@ sub hub {
 # given an activity record, fills the db tables properly
 sub append_activity {
     my ($self, $record) = @_;
-    warn Dumper($record);
+    #warn Dumper($record);
     my $supplier = $record->{item_supplier} or die "missing item supplier";
     my $id = $record->{item_id};
 
     my $rfid = $record->{rfid};
 	my $dev = $record->{dev};
     if ($rfid) {
-        my $shelf = $record->{shelf};
+        my $loc = $record->{loc}//$record->{shelf};
         my %data;
         $data{item_supplier} = $supplier;
         $data{item_id} = $id;
         $data{data} = $record->{data};
 
-        if ($shelf =~ m{\.(pub|stack)\.}) {
-            $data{ploc} = $shelf;
+        if ($loc =~ m{\.(pub|stack)\.}) {
+            $data{ploc} = $loc;
             $data{ploc_at} = Time::HiRes::time();
             $data{ploc_dev} = $dev;
         } else {
-            $data{tloc} = $shelf;
+            $data{tloc} = $loc;
             $data{tloc_at} = Time::HiRes::time();
             $data{tloc_dev} = $dev;
         }
