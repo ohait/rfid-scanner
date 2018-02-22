@@ -272,7 +272,11 @@ sub api_search {
     => [$q."%"] => sub {
         my $meta = $self->json_dec($_{json});
         delete $_{json};
-        return {%_, meta => $meta};
+        return {
+            %_,
+            meta => $meta,
+            last_seen => $self->epoch2iso($_{last_seen}),
+        };
     };
 
     my $out = {
