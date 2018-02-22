@@ -76,6 +76,7 @@ sub {
             warn $err;
             my $code = 500;
             $err =~ s{^(\d\d\d) }{} and $code = $1;
+            $err =~ s{at \S+ line \d+\..*}{}s;
             $res = $req->new_response($code);
             $res->body($err);
         };
