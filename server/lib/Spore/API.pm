@@ -35,12 +35,32 @@ sub json_dec {
     return undef unless $json;
     return $self->{JSON}->decode($json);
 }
+sub epoch2human {
+    my ($self, $epoch) = @_;
+    my $d = time()-$epoch;
+    my $k = 'ago';
+    if ($d<0) {
+        $k = 'in';
+        $d = -$d;
+    }
+
+    my $h;
+    return $k => "now" if $d<90;
+    $h = int($d/60+0.5);
+    return $k => "$h'" if $h<=45;
+    $h = int($d/3600+0.5);
+    return $k => $h."h" if $h<=32;
+    $h = int($d/86400+0.5);
+    return $k => $h."d" if $h<=30;
+    return;
+}
 sub epoch2iso {
     my ($self, $epoch) = @_;
     return undef unless $epoch;
     return {
         epoch => $epoch,
         iso8601 => DateTime->from_epoch(epoch => $epoch)->iso8601(),
+        $self->epoch2human($epoch),
     };
 }
 
