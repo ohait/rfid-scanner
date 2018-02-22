@@ -29,9 +29,6 @@ TX {
 sub dispatch {
     my ($req) = @_;
     my ($route, $path) = $req->path =~ m{^/(\w+)(.*)};
-    if (!$route) {
-        die "404 Not Found ".$req->path;
-    }
 
     if ($route eq 'arduino') {
         return $::APP->arduino($req->uri, $req->raw_body, $req);
@@ -42,7 +39,28 @@ sub dispatch {
     if ($route eq 'hub') {
         return $::APP->hub($path, $req->raw_body, $req);
     }
-    die "404 Not Found ".$req->path;
+    my $f = $req->path;
+    $f =~ m{(^|\/)\.} and die "404 Invalid path '$f'";
+    warn Dumper("static/$f", -d "static/$f");
+    $f .= "index.html" if -f "static/$f/index.html";
+    -r "static/$f" or die "404 Not Found '$f'";
+
+    open my $fh, '<:raw', "static/$f" or die "403 Forbidden: $!";
+    my $body = do { local $/, <$fh> }; # slurp
+    close $fh;
+    my $ctype = 'application/octet-stream';
+    $ctype = 'text/plain' if $f =~ m{\.txt};
+    $ctype = 'text/html' if $f =~ m{\.html};
+    $ctype = 'text/css' if $f =~ m{\.css};
+    $ctype = 'application/javascript' if $f =~ m{\.js};
+
+    my $r = $req->new_response(200);
+    $r->header("Cache-Control" => "private");
+    $r->header("Access-Control-Allow-Origin", "*");
+    $r->header("Content-Type" => $ctype);
+    $r->body($body);
+
+    return $r;
 }
 
 
