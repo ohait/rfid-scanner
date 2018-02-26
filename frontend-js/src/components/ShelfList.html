@@ -1,0 +1,83 @@
+<div>
+  <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px;">
+    <thead>
+      <tr><th>shelf</th><th>items</th><tr>
+    </thead>
+    <tbody>
+      {{#each shelves as shelf}}
+        <tr>
+          <td><div class="shelflink">
+            <div><a href="/rfid/shelf/ILL">ILL</a>.<div><a href="/rfid/shelf/ILL.staff">staff</a>.<div><a href="/rfid/shelf/ILL.staff.in">in</a></div></div></div></div></td><td>6</td></
+      {{/each}}
+    </tbody>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/ILL">ILL</a>.<div><a href="/rfid/shelf/ILL.staff">staff</a>.<div><a href="/rfid/shelf/ILL.staff.in">in</a></div></div></div></div></td><td>6</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fbje">fbje</a></div></div>&hellip;</td><td>14393</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fbjo">fbjo</a></div></div>&hellip;</td><td>9154</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fbol">fbol</a></div></div>&hellip;</td><td>14382</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/ffur">ffur</a></div></div>&hellip;</td><td>16237</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fgam">fgam</a></div></div>&hellip;</td><td>16971</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fgry">fgry</a></div></div>&hellip;</td><td>24952</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fhol">fhol</a></div></div>&hellip;</td><td>16930</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/flam">flam</a></div></div>&hellip;</td><td>38643</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fmaj">fmaj</a></div></div>&hellip;</td><td>42207</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fnor">fnor</a></div></div>&hellip;</td><td>8727</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fnyd">fnyd</a></div></div>&hellip;</td><td>9276</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fopp">fopp</a></div></div>&hellip;</td><td>10811</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/frmm">frmm</a></div></div>&hellip;</td><td>6007</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/froa">froa</a></div></div>&hellip;</td><td>15328</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/from">from</a></div></div>&hellip;</td><td>4294</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fsme">fsme</a></div></div>&hellip;</td><td>5715</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fsto">fsto</a></div></div>&hellip;</td><td>9210</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/ftor">ftor</a></div></div>&hellip;</td><td>24404</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/hlsf">hlsf</a>.<div><a href="/rfid/shelf/hlsf.staff">staff</a></div></div></div>&hellip;</td><td>366</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/hsko">hsko</a>.<div><a href="/rfid/shelf/hsko.staff">staff</a></div></div></div>&hellip;</td><td>14313</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/hutl">hutl</a></div></div>&hellip;</td><td>141886</td></tr>
+    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/unknown">unknown</a>.<div><a href="/rfid/shelf/unknown.auto">auto</a></div></div></div></td><td>2</td></tr>
+  </table>
+</div>
+<script>
+  import SvelteRouter from 'svelte-router'
+  import { mockShelves } from '../assets/mockAPI.js'
+  export default {
+    props: ["barcode"],
+    data: () => ({
+      item: mockItemById
+    })
+  }
+</script>
+<style>
+  a {
+      text-decoration: none;
+      color: #840;
+  }
+  .shelflink {
+      display: inline-block;
+      white-space: nowrap;
+  }
+  .shelflink div {
+      display: inline-block;
+  }
+  .shelflink div:hover > a {
+      background-color: #fa5;
+      color: black;
+  }
+  a:hover {
+      background-color: #fa5;
+      color: black;
+  }
+  td {
+      padding: 2px;
+      padding-left: 5px;
+      padding-right: 3px;
+      border-top: none;
+      border-left: none;
+      white-space: nowrap;
+      font-size: 11px;
+  }
+  th {
+      background-color: #ccc;
+      border-top: none;
+      border-left: none;
+      font-size: 12px;
+  }
+</style>

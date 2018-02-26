@@ -1,0 +1,51 @@
+<div>
+  <RouterLink to="/">Home</RouterLink>
+  <RouterLink to="/shelf">Shelf</RouterLink>
+  <RouterLink to="/item">Item</RouterLink>
+  <div id="app"></div>
+</div>
+
+<script>
+  import SvelteRouter from 'svelte-router'
+  import Home from './pages/Home.html'
+  import Shelf from './pages/Shelf.html'
+  import Item from './pages/Item.html'
+  import NotFound from './pages/NotFound.html'
+  const { createRouter, RouterLink } = SvelteRouter
+  const router = createRouter({
+    '/': Home,
+    '/shelf': Shelf,
+    '/shelf/:shelfId': Shelf,
+    '/item/:barcode': {
+      Component: Item,
+      // might be we want to pass data as props instead
+      props: {
+        data: {
+          salutation: 'Hello'
+        }
+      },
+    },
+    default: NotFound
+  })
+  createRouter.listen(() => {
+    console.log('router changed')
+  })
+  export default {
+    oncreate () {
+      router.create('#app')
+      // router.create(document.querySelector('#app'))
+    },
+    ondestroy () {
+      router.destroy()
+    },
+    components: {
+      RouterLink
+    }
+  }
+</script>
+
+<style>
+  .router-link-active {
+    color: red;
+  }
+</style>

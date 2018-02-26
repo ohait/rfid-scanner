@@ -1,0 +1,43 @@
+<div class="container">
+  <div class="shelf-info">
+    <ShelfInfo />
+  </div>
+  <div class="trans-log">
+    <TransactionLog barcode="{{path.barcode}}"/>
+  </div>
+</div>
+
+<script>
+  import SvelteRouter from 'svelte-router'
+  import ShelfInfo from '../components/ShelfInfo.html'
+  import TransactionLog from '../components/TransactionLog.html'
+  const { createRouter } = SvelteRouter
+  export default {
+    methods: {
+      goHome () {
+        createRouter.replace('/')
+      }
+    },
+    oncreate() {
+      console.log(this.options.data.path.barcode)
+    },
+    components: {
+      TransactionLog,
+      ShelfInfo
+    }
+  }
+</script>
+<style type="text/css">
+  .container{
+    width: 100%;
+  }
+
+  .shelf-info {
+    float: left;
+    width: 35%;
+  }
+  .trans-log {
+    float: right;
+    width: 65%;
+  }
+</style>
