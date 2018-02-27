@@ -97,6 +97,7 @@ sub hub {
     for my $msg (@$list) {
         $msg->{client_IP} or die "missing IP"; # Should we use the remote addr?
         my $record = $self->{hub_hook}->($msg);
+        next unless $record;
         push @records, $record;
     }
 
