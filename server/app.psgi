@@ -94,7 +94,6 @@ sub {
             # JSON!
             my $r = $req->new_response(200);
             $r->header("Cache-Control" => "private");
-            $r->header("Access-Control-Allow-Origin", "*");
             $r->header("Content-Type" => "application/json");
             $r->body($JSON->encode($res));
             $res = $r;
@@ -111,5 +110,6 @@ sub {
         }
         $res->body("$code $err");
     };
+    $res->header("Access-Control-Allow-Origin", "*");
     return $res->finalize;
 };
