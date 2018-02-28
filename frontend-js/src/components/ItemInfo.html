@@ -1,0 +1,59 @@
+<div>
+  <!--<img src="https://static.deichman.no/thumb/p54427b83336da5e04f48570efe6599d6.jpg">-->
+  <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
+    <tr><th colspan=2>{{ item.response.meta.title }}</th></tr>
+    <tr><td>author</td><td>{{ item.response.meta.author }}</td></tr>
+    <tr><td>cn</td><td><abbr title="{{ item.response.meta.callnumber }}">{{ item.response.meta.callnumber }}</abbr></td></tr>
+    <tr><td>barcode</td><td><a href="/#/item/{{ item.item_id }}">{{ item.item_id }}</a></td></tr>
+    <tr><td>bibnum</td><td>{{ item.response.meta.biblionumber }} [<a href="https://intra.deichman.no/cgi-bin/koha/catalogue/detail.pl?biblionumber={{ item.response.meta.biblionumber }}">Koha</a>]</td></tr>
+    <tr><td>pubid</td><td>notgiveninapi</td></tr>
+    {{#each item.response.tags as tag}}
+      <tr><th colspan=2>tag</th></tr>
+      <tr>
+        <td>last_at</td>
+        {{#if tag.permanent.at }}
+          <td style="background: #99fec8; "><abbr title="Tue Feb 27 10:16:09 2018">CHECK {{ tag.permanent.at.iso8601 }}</abbr></td>
+        {{/if}}
+      </tr>
+      <tr><td>last_dev</td><td>hutl.rfidhub.10.172.3.70</td></tr>
+      <tr><td>rfid</td><td><a href="/rfid/e0:04:01:00:43:56:ce:53">CHECK {{ tag.permanent.dev }}</a></td></tr>
+      <tr><td>shelf</td><td><div class="shelflink"><div><a href="/rfid/shelf/hutl">CHECK {{ tag.permanent.loc }}</a>.<div><a href="/rfid/shelf/hutl.stack">stack</a>.<div><a href="/rfid/shelf/hutl.stack.m3">m3</a>.<div><a href="/rfid/shelf/hutl.stack.m3.04">04</a></div></div></div></div></div></td></tr>
+      <tr><td>shelf_at</td><td style="background: #f4a53f; "><abbr title="Tue Jul 18 12:58:05 2017">2017-07-18</abbr></td></tr>
+      <tr><td>shelf_dev</td><td><span class="hex">NULL</span></td></tr>
+      <tr><td>temp</td><td><div class="shelflink"><div><a href="/rfid/shelf/hutl">CHECK {{ tag.temporary.loc }}</a>.<div><a href="/rfid/shelf/hutl.staff">staff</a>.<div><a href="/rfid/shelf/hutl.staff.in">in</a></div></div></div></div></td></tr>
+      <tr><td>temp_at</td><td style="background: #99fec8; "><abbr title="Tue Feb 27 10:16:09 2018">CHECK {{ tag.temporary.at.iso8601 }}</abbr></td></tr>
+    {{/each}}
+  </table>
+</div>
+<style>
+  td {
+      padding: 2px;
+      padding-left: 5px;
+      padding-right: 3px;
+      border-top: none;
+      border-left: none;
+      white-space: nowrap;
+      font-size: 11px;
+  }
+  th {
+      background-color: #ccc;
+      border-top: none;
+      border-left: none;
+      font-size: 12px;
+  }
+  tr {
+  }
+  tr.hit {
+      background-color: #fbb;
+  }
+  .hex {
+      font-size: 60%;
+      border: 1px solid gray;
+      margin-right: 1px;
+      background-color: gray;
+      color: white;
+  }
+  .hex-utf {
+      background-color: #ddd;
+  }
+</style>
