@@ -7,10 +7,12 @@
 
 <script>
   import SvelteRouter from 'svelte-router'
+  /* PAGES */
   import Home from './pages/Home.html'
   import Shelf from './pages/Shelf.html'
   import Item from './pages/Item.html'
   import NotFound from './pages/NotFound.html'
+  /* ROUTES */
   const { createRouter, RouterLink } = SvelteRouter
   const router = createRouter({
     '/': Home,
@@ -24,8 +26,10 @@
           salutation: 'Hello'
         }
       },
-    },
-    default: NotFound
+    }
+  },{
+    pathRegex: '[a-zA-Z0-9\.-_]+',
+    defaultRoute: NotFound
   })
   createRouter.listen(() => {
     console.log('router changed')

@@ -1,18 +1,22 @@
 <div class="container">
   <div class="shelf-info">
-    <ShelfInfo />
+    <ItemInfo :item />
   </div>
   <div class="trans-log">
-    <TransactionLog barcode="{{path.barcode}}"/>
+    <ItemContent barcode="{{path.barcode}}" :item />
   </div>
 </div>
 
 <script>
+  import { mockItemById } from '../assets/mockAPI.js'
   import SvelteRouter from 'svelte-router'
-  import ShelfInfo from '../components/ShelfInfo.html'
-  import TransactionLog from '../components/TransactionLog.html'
+  import ItemInfo from '../components/ItemInfo.html'
+  import ItemContent from '../components/ItemContent.html'
   const { createRouter } = SvelteRouter
   export default {
+    data: () => ({
+      item: mockItemById
+    }),
     methods: {
       goHome () {
         createRouter.replace('/')
@@ -22,8 +26,8 @@
       console.log(this.options.data.path.barcode)
     },
     components: {
-      TransactionLog,
-      ShelfInfo
+      ItemContent,
+      ItemInfo
     }
   }
 </script>
@@ -34,10 +38,10 @@
 
   .shelf-info {
     float: left;
-    width: 35%;
+    width: 30%;
   }
   .trans-log {
     float: right;
-    width: 65%;
+    width: 70%;
   }
 </style>

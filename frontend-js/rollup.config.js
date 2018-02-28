@@ -7,9 +7,9 @@ import uglify from 'rollup-plugin-uglify';
 const production = !process.env.ROLLUP_WATCH;
 
 export default {
-	input: 'src/main.js',	
+	input: 'src/main.js',
 	output: {
-		sourcemap: true,	
+		sourcemap: true,
 		format: 'iife',
 		name: 'app',
 		file: 'public/bundle.js'

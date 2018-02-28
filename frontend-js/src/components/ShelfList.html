@@ -4,45 +4,40 @@
       <tr><th>shelf</th><th>items</th><tr>
     </thead>
     <tbody>
-      {{#each shelves as shelf}}
+      {{#each shelves.results as shelf}}
         <tr>
-          <td><div class="shelflink">
-            <div><a href="/rfid/shelf/ILL">ILL</a>.<div><a href="/rfid/shelf/ILL.staff">staff</a>.<div><a href="/rfid/shelf/ILL.staff.in">in</a></div></div></div></div></td><td>6</td></
+          <td>
+            <!-- shelf.loc links added by computed props -->
+            {{#each shelf.loc as loc, idx}}
+              <div class="shelflink">
+                <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != shelf.loc.length - 1) }}.{{/if}}
+              </div>
+            {{/each}}
+          </td>
+          <td>{{shelf.tags}}</td>
+        </tr>
       {{/each}}
     </tbody>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/ILL">ILL</a>.<div><a href="/rfid/shelf/ILL.staff">staff</a>.<div><a href="/rfid/shelf/ILL.staff.in">in</a></div></div></div></div></td><td>6</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fbje">fbje</a></div></div>&hellip;</td><td>14393</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fbjo">fbjo</a></div></div>&hellip;</td><td>9154</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fbol">fbol</a></div></div>&hellip;</td><td>14382</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/ffur">ffur</a></div></div>&hellip;</td><td>16237</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fgam">fgam</a></div></div>&hellip;</td><td>16971</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fgry">fgry</a></div></div>&hellip;</td><td>24952</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fhol">fhol</a></div></div>&hellip;</td><td>16930</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/flam">flam</a></div></div>&hellip;</td><td>38643</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fmaj">fmaj</a></div></div>&hellip;</td><td>42207</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fnor">fnor</a></div></div>&hellip;</td><td>8727</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fnyd">fnyd</a></div></div>&hellip;</td><td>9276</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fopp">fopp</a></div></div>&hellip;</td><td>10811</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/frmm">frmm</a></div></div>&hellip;</td><td>6007</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/froa">froa</a></div></div>&hellip;</td><td>15328</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/from">from</a></div></div>&hellip;</td><td>4294</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fsme">fsme</a></div></div>&hellip;</td><td>5715</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/fsto">fsto</a></div></div>&hellip;</td><td>9210</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/ftor">ftor</a></div></div>&hellip;</td><td>24404</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/hlsf">hlsf</a>.<div><a href="/rfid/shelf/hlsf.staff">staff</a></div></div></div>&hellip;</td><td>366</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/hsko">hsko</a>.<div><a href="/rfid/shelf/hsko.staff">staff</a></div></div></div>&hellip;</td><td>14313</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/hutl">hutl</a></div></div>&hellip;</td><td>141886</td></tr>
-    <tr><td><div class="shelflink"><div><a href="/rfid/shelf/unknown">unknown</a>.<div><a href="/rfid/shelf/unknown.auto">auto</a></div></div></div></td><td>2</td></tr>
   </table>
 </div>
 <script>
   import SvelteRouter from 'svelte-router'
-  import { mockShelves } from '../assets/mockAPI.js'
   export default {
-    props: ["barcode"],
-    data: () => ({
-      item: mockItemById
-    })
+    props: ['shelves'],
+    computed: {
+      // split locations to generate clickable links, should be done in store?
+      clickableLocations: shelves => shelves.results.map(shelf => {
+        let locs = shelf.loc.split('.')
+        let s = new Set
+        for (let i=0;i < locs.length;i++) {
+          s.add({
+            link: `${locs.slice(0,i+1).join('.')}`,
+            name: locs[i]
+          })
+        }
+        shelf.loc = [...s] // Svelte doesnt support Set or Map iterators, so use spread
+      })
+    }
   }
 </script>
 <style>

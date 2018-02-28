@@ -1,23 +1,23 @@
 <div class="container">
-  <div class="shelf-list">
-    <ShelfList />
-  </div>
-  <div class="shelf-content">
-    <ShelfContent shelf="{{path.shelfId}}" />
-  </div>
+  {{#if path.shelfId}}
+    <div class="shelf-list"><ShelfList shelves="{{ shelves }}" /></div>
+    <div class="shelf-content"><ShelfContent :shelf /></div>
+  {{else}}
+    <div class="shelf-list"><ShelfList shelves="{{ shelves }}" /></div>
+  {{/if}}
 </div>
 
 <script>
   import SvelteRouter from 'svelte-router'
+  import { mockShelves, mockShelfById } from '../assets/mockAPI.js'
   import ShelfList from '../components/ShelfList.html'
   import ShelfContent from '../components/ShelfContent.html'
   const { createRouter } = SvelteRouter
   export default {
-    methods: {
-      goHome () {
-        createRouter.replace('/')
-      }
-    },
+    data: () => ({
+      shelves: mockShelves,
+      shelf: mockShelfById
+    }),
     components: {
       ShelfList,
       ShelfContent
@@ -31,10 +31,10 @@
 
   .shelf-list {
     float: left;
-    width: 35%;
+    width: 25%;
   }
   .shelf-content {
     float: right;
-    width: 65%;
+    width: 75%;
   }
 </style>
