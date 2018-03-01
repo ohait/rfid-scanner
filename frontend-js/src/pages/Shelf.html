@@ -1,9 +1,8 @@
 <div class="container">
+  <div class="shelf-list"><ShelfList shelves="{{ shelves }}" /></div>
   {{#if path.shelfId}}
-    <div class="shelf-list"><ShelfList shelves="{{ shelves }}" /></div>
+    {{path.shelfId}}
     <div class="shelf-content"><ShelfContent :shelf /></div>
-  {{else}}
-    <div class="shelf-list"><ShelfList shelves="{{ shelves }}" /></div>
   {{/if}}
 </div>
 

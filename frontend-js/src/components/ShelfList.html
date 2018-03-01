@@ -4,17 +4,17 @@
       <tr><th>shelf</th><th>items</th><tr>
     </thead>
     <tbody>
-      {{#each shelves.results as shelf}}
+      {{#each shelves.results as res}}
         <tr>
           <td>
-            <!-- shelf.loc links added by computed props -->
-            {{#each shelf.loc as loc, idx}}
+            <!-- clickable tree of shelves -->
+            {{#each [...locationMap.get(res.loc)] as loc, idx}}
               <div class="shelflink">
-                <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != shelf.loc.length - 1) }}.{{/if}}
+                <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.loc)].length - 1) }}.{{/if}}
               </div>
             {{/each}}
           </td>
-          <td>{{shelf.tags}}</td>
+          <td>{{res.tags}}</td>
         </tr>
       {{/each}}
     </tbody>
@@ -25,18 +25,21 @@
   export default {
     props: ['shelves'],
     computed: {
-      // split locations to generate clickable links, should be done in store?
-      clickableLocations: shelves => shelves.results.map(shelf => {
-        let locs = shelf.loc.split('.')
-        let s = new Set
-        for (let i=0;i < locs.length;i++) {
-          s.add({
-            link: `${locs.slice(0,i+1).join('.')}`,
-            name: locs[i]
-          })
+      locationMap: shelves => {
+        let m = new Map
+        for (const shelf of shelves.results) {
+          let l = new Set
+          let locs = shelf.loc.split('.')
+          for (let i=0;i < locs.length;i++) {
+            l.add({
+              link: `${locs.slice(0,i+1).join('.')}`,
+              name: locs[i]
+            })
+          }
+          m.set(shelf.loc, l)
         }
-        shelf.loc = [...s] // Svelte doesnt support Set or Map iterators, so use spread
-      })
+        return m // Svelte doesnt support Set or Map iterators, so use spread
+      }
     }
   }
 </script>

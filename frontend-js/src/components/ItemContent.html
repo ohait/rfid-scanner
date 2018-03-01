@@ -6,7 +6,7 @@
   </form>
   <hr size="1">
   <h2>transaction log</h2>
-  <span> Input barcode: {{ barcode }}</span>
+  <span> Input barcode: {{ barcode }}</span><br>
   <span>Item ID: {{ item.response.item_id }}</span><br>
   <span>{{ item.response.meta.author }}</span><br>
 
@@ -16,19 +16,15 @@
     </thead>
     <tbody>
       {{#each item.response.history as it}}
-        <tr><td>{{it.at.iso8601}}</td><td>{{it.location}}</td><td>{{it.actions.join(' ')}}</td><td>{{it.dev}}</td></tr>
+        <tr><td>{{it.at.ago}}</td><td>{{it.location}}</td><td>{{it.actions.join(' ')}}</td><td>{{it.dev}}</td></tr>
       {{/each}}
     </tbody>
   </table>
 </div>
 <script>
   import SvelteRouter from 'svelte-router'
-  import { mockItemById } from '../assets/mockAPI.js'
   export default {
-    props: ["barcode"],
-    data: () => ({
-      item: mockItemById
-    })
+    props: ["barcode", "item"]
   }
 </script>
 <style>
