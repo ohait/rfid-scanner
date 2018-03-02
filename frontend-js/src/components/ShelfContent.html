@@ -4,18 +4,25 @@
       <tr><th>at</th><th>location</th><th>barcode</th><th>callnum</th><th width="15%">author</th><th>title</th><th>last</th></tr>
     </thead>
     <tbody>
-      {{#each shelf.results as res}}
-        <tr>
-          <td style="background-color: #a9fbaf;">
-            <a href="/#/tag/{{res.tags[0].rfid}}"><abbr title="Tue Feb 20 14:42:38 2018">{{res.last_at.ago}} ago</abbr></a></td>
-          <td><div class="shelflink"><div><a href="/#/shelf/hutl">hutl</a>.<div><a href="/#/shelf/hutl.stack">stack</a>.<div><a href="/#/shelf/hutl.stack.foo">foo</a></div></div></div></div></td>
-          <td><a href="/#/item/{{res.item_id}}">{{res.item_id}}</a></td>
-          <td><abbr title="{{res.data.callnumber}}">{{res.data.callnumber}}</abbr></td>
-          <td><abbr style="text-decoration:&nbsp;none;" title="{{res.data.author}}">{{res.data.author}}</abbr></td>
-          <td>{{res.data.title}}</td>
-          <td><abbr title="Tue Feb 20 14:42:38 2018">{{res.last_at.ago}}</abbr></td>
-        </tr>
-      {{/each}}
+      {{#if shelf.results}}
+        {{#each shelf.results as res}}
+          <tr>
+            <td style="background-color: #a9fbaf;">
+              <a href="/#/tag/{{res.tags[0].rfid}}"><abbr title="Tue Feb 20 14:42:38 2018">{{res.last_at.ago}} ago</abbr></a>
+            </td>
+            {{#each [...locationMap.get(res.tags[0].temporary.loc)] as loc, idx}}
+              <div class="shelflink">
+                <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.tags[0].temporary.loc)].length - 1) }}.{{/if}}
+              </div>
+            {{/each}}
+            <td><a href="/#/item/{{res.item_id}}">{{res.item_id}}</a></td>
+            <td><abbr title="{{res.data.callnumber}}">{{res.data.callnumber}}</abbr></td>
+            <td><abbr style="text-decoration:&nbsp;none;" title="{{res.data.author}}">{{res.data.author}}</abbr></td>
+            <td>{{res.data.title}}</td>
+            <td><abbr title="Tue Feb 20 14:42:38 2018">{{res.last_at.ago}}</abbr></td>
+          </tr>
+        {{/each}}
+      {{/if}}
   </table>
 </div>
 <style>

@@ -4,43 +4,28 @@
       <tr><th>shelf</th><th>items</th><tr>
     </thead>
     <tbody>
-      {{#each shelves.results as res}}
-        <tr>
-          <td>
-            <!-- clickable tree of shelves -->
-            {{#each [...locationMap.get(res.loc)] as loc, idx}}
-              <div class="shelflink">
-                <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.loc)].length - 1) }}.{{/if}}
-              </div>
-            {{/each}}
-          </td>
-          <td>{{res.tags}}</td>
-        </tr>
-      {{/each}}
+      {{#if shelves.results}}
+        {{#each shelves.results as res}}
+          <tr>
+            <td>
+              <!-- clickable tree of shelves -->
+              {{#each [...locationMap.get(res.loc)] as loc, idx}}
+                <div class="shelflink">
+                  <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.loc)].length - 1) }}.{{/if}}
+                </div>
+              {{/each}}
+            </td>
+            <td>{{res.tags}}</td>
+          </tr>
+        {{/each}}
+      {{/if}}
     </tbody>
   </table>
 </div>
 <script>
   import SvelteRouter from 'svelte-router'
   export default {
-    props: ['shelves'],
-    computed: {
-      locationMap: shelves => {
-        let m = new Map
-        for (const shelf of shelves.results) {
-          let l = new Set
-          let locs = shelf.loc.split('.')
-          for (let i=0;i < locs.length;i++) {
-            l.add({
-              link: `${locs.slice(0,i+1).join('.')}`,
-              name: locs[i]
-            })
-          }
-          m.set(shelf.loc, l)
-        }
-        return m // Svelte doesnt support Set or Map iterators, so use spread
-      }
-    }
+    props: ['shelves']
   }
 </script>
 <style>

@@ -1,21 +1,22 @@
 <div class="container">
   <div class="item-info">
-    <ItemInfo :item />
+    <ItemInfo :item :locationMap />
   </div>
   <div class="history">
-    <ItemContent barcode="{{path.barcode}}" :item />
+    <ItemContent barcode="{{path.barcode}}" :item :locationMap />
   </div>
 </div>
 
 <script>
   import SvelteRouter from 'svelte-router'
-  import { mockItemById } from '../assets/mockAPI.js'
+  import { mockItemById,mockShelves } from '../assets/mockAPI.js'
   import ItemInfo from '../components/ItemInfo.html'
   import ItemContent from '../components/ItemContent.html'
   const { createRouter } = SvelteRouter
   export default {
     data: () => ({
-      item: mockItemById
+      item: mockItemById,
+      locationMap: null
     }),
     methods: {
       goHome () {
@@ -23,7 +24,28 @@
       }
     },
     oncreate() {
-      console.log(this.options.data.path.barcode)
+      // get shelves from api
+      return new Promise((resolve) => {
+        let m = new Map
+        for (const shelf of mockShelves.results) {
+          let l = new Set
+          let locs = shelf.loc.split('.')
+          for (let i=0;i < locs.length;i++) {
+            l.add({
+              link: `${locs.slice(0,i+1).join('.')}`,
+              name: locs[i]
+            })
+          }
+          m.set(shelf.loc, l)
+        }
+        return resolve (m) // Svelte doesnt support Set or Map iterators, so use spread
+      })
+      .then(lmap => {
+        this.set({
+          locationMap: lmap,
+          item: mockItemById
+        })
+      })
     },
     components: {
       ItemContent,

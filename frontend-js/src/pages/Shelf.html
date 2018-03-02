@@ -1,8 +1,8 @@
 <div class="container">
-  <div class="shelf-list"><ShelfList shelves="{{ shelves }}" /></div>
+  <div class="shelf-list"><ShelfList shelves="{{ shelves }}" :locationMap /></div>
   {{#if path.shelfId}}
     {{path.shelfId}}
-    <div class="shelf-content"><ShelfContent :shelf /></div>
+    <div class="shelf-content"><ShelfContent :shelf :locationMap /></div>
   {{/if}}
 </div>
 
@@ -14,12 +14,39 @@
   const { createRouter } = SvelteRouter
   export default {
     data: () => ({
-      shelves: mockShelves,
-      shelf: mockShelfById
+      shelves: {},
+      shelf: {},
+      locationMap: null
     }),
     components: {
       ShelfList,
       ShelfContent
+    },
+    oncreate () {
+      // get shelves from api
+      // todo: move to helper function
+      return new Promise((resolve) => {
+        let m = new Map
+        for (const shelf of mockShelves.results) {
+          let l = new Set
+          let locs = shelf.loc.split('.')
+          for (let i=0;i < locs.length;i++) {
+            l.add({
+              link: `${locs.slice(0,i+1).join('.')}`,
+              name: locs[i]
+            })
+          }
+          m.set(shelf.loc, l)
+        }
+        resolve (m) // Svelte doesnt support Set or Map iterators, so use spread
+      })
+      .then(lmap => {
+        this.set({
+          locationMap: lmap,
+          shelves: mockShelves,
+          shelf: mockShelfById
+        })
+      })
     }
   }
 </script>
