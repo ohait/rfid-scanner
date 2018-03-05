@@ -1,5 +1,6 @@
 <div>
   <!--<img src="https://static.deichman.no/thumb/p54427b83336da5e04f48570efe6599d6.jpg">-->
+  {{#if item && locationMap}}
   <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
     <tr><th colspan=2>{{ item.response.meta.title }}</th></tr>
     <tr><td>author</td><td>{{ item.response.meta.author }}</td></tr>
@@ -8,7 +9,6 @@
     <tr><td>bibnum</td><td>{{ item.response.meta.biblionumber }} [<a href="https://intra.deichman.no/cgi-bin/koha/catalogue/detail.pl?biblionumber={{ item.response.meta.biblionumber }}">Koha</a>]</td></tr>
     <tr><td>pubid</td><td>notgiveninapi</td></tr>
     <!-- TODO, dont render until locationMap is set -->
-    {{#if item.response.tags && locationMap}}
       {{#each item.response.tags as tag}}
         <tr><th colspan=2>tag</th></tr>
         <tr>
@@ -18,7 +18,7 @@
           {{/if}}
         </tr>
         <tr><td>last_dev</td><td>hutl.rfidhub.10.172.3.70</td></tr>
-        <tr><td>rfid</td><td><a href="/rfid/e0:04:01:00:43:56:ce:53">CHECK {{ tag.permanent.dev }}</a></td></tr>
+        <tr><td>rfid</td><td><a href="/#/dev/{{ tag.permanent.dev }}">CHECK {{ tag.permanent.dev }}</a></td></tr>
         <tr>
           <td>shelf</td>
           <td>
@@ -48,8 +48,8 @@
         </tr>
         <tr><td>temp_at</td><td style="background: #99fec8; "><abbr title="Tue Feb 27 10:16:09 2018">CHECK {{ tag.temporary.at.iso8601 }}</abbr></td></tr>
       {{/each}}
-    {{/if}}
-  </table>
+    </table>
+  {{/if}}
 </div>
 <script>
   import SvelteRouter from 'svelte-router'

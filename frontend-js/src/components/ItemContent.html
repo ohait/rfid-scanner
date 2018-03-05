@@ -1,49 +1,78 @@
 <div>
-  <h1><a href="/#/item/">RFID</a> -- {{ barcode }} {{ item.response.meta.title }}</h1>
-  <form action="/#/item/">
-  <label for="code">Barcode: </label>
-  <input id="code" name="code" class="ui-autocomplete-input" autocomplete="off">
-  </form>
-  <hr size="1">
-  <h2>transaction log</h2>
-  <span> Input barcode: {{ barcode }}</span><br>
-  <span>Item ID: {{ item.response.item_id }}</span><br>
-  <span>{{ item.response.meta.author }}</span><br>
+  {{#if item}}
+    <h1>-- {{ barcode }} {{ item.response.meta.title }}</h1>
+    <form on:submit='handleSubmit( event )'>
+    <label for="code">Barcode: </label>
+    <input id="code" name="code" class="ui-autocomplete-input" autocomplete="off">
+    </form>
+    <hr size="1">
+    <h2>transaction log</h2>
+    <span>Input barcode: {{ barcode }}</span><br>
+    <span>Item ID: {{ item.response.item_id }}</span><br>
+    <span>{{ item.response.meta.author }}</span><br>
 
-  <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
-    <thead>
-      <tr><th>at</th><th>shelf</th><th>type</th><th>rfid</th></tr>
-    </thead>
-    <tbody>
-      {{#each item.response.history as it}}
-        <tr><td>{{it.at.ago}} ago</td><td>{{it.location}}</td><td>{{it.actions.join(' ')}}</td><td>{{it.dev}}</td></tr>
-      {{/each}}
-    </tbody>
-  </table>
+    <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
+      <thead>
+        <tr><th>at</th><th>shelf</th><th>type</th><th>rfid</th></tr>
+      </thead>
+      <tbody>
+        {{#each item.response.history as it}}
+          <tr><td>{{it.at.ago}} ago</td>
+            <td>
+              {{#each [...locationMap.get(it.location)] as loc, idx}}
+                <div class="shelflink">
+                  <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(it.location)].length - 1) }}.{{/if}}
+                </div>
+              {{/each}}
+            </td>
+            <td>{{it.actions.join(' ')}}</td><td>{{it.dev}}</td></tr>
+        {{/each}}
+      </tbody>
+    </table>
+  {{/if}}
 </div>
 <script>
   import SvelteRouter from 'svelte-router'
   export default {
-    props: ["barcode", "item"]
+    props: ["barcode", "item"],
+    methods: {
+      handleSubmit(event) {
+        event.preventDefault()
+        console.log(event)
+      }
+    }
   }
 </script>
 <style>
+  .shelflink {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .shelflink div {
+    display: inline-block;
+  }
+  .shelflink div:hover > a {
+    background-color: #fa5;
+    color: black;
+  }
+  a:hover {
+    background-color: #fa5;
+    color: black;
+  }
   td {
-      padding: 2px;
-      padding-left: 5px;
-      padding-right: 3px;
-      border-top: none;
-      border-left: none;
-      white-space: nowrap;
-      font-size: 11px;
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 3px;
+    border-top: none;
+    border-left: none;
+    white-space: nowrap;
+    font-size: 11px;
   }
   th {
-      background-color: #ccc;
-      border-top: none;
-      border-left: none;
-      font-size: 12px;
-  }
-  tr {
+    background-color: #ccc;
+    border-top: none;
+    border-left: none;
+    font-size: 12px;
   }
   tr.hit {
       background-color: #fbb;

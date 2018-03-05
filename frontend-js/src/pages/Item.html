@@ -15,7 +15,7 @@
   const { createRouter } = SvelteRouter
   export default {
     data: () => ({
-      item: mockItemById,
+      item: null,
       locationMap: null
     }),
     methods: {
@@ -25,26 +25,45 @@
     },
     oncreate() {
       // get shelves from api
-      return new Promise((resolve) => {
-        let m = new Map
-        for (const shelf of mockShelves.results) {
-          let l = new Set
-          let locs = shelf.loc.split('.')
-          for (let i=0;i < locs.length;i++) {
-            l.add({
-              link: `${locs.slice(0,i+1).join('.')}`,
-              name: locs[i]
-            })
+      const api = "http://spore.deichman.no/api"
+      fetch(`${api}/shelves`)
+      .then(res  => { return res.json() })
+      .then(json => {
+        return new Promise((resolve) => {
+          let m = new Map
+          for (const shelf of json.results) {
+            let l = new Set
+            let locs = shelf.loc.split('.')
+            for (let i=0;i < locs.length;i++) {
+              l.add({
+                link: `${locs.slice(0,i+1).join('.')}`,
+                name: locs[i]
+              })
+            }
+            m.set(shelf.loc, l)
           }
-          m.set(shelf.loc, l)
-        }
-        return resolve (m) // Svelte doesnt support Set or Map iterators, so use spread
-      })
-      .then(lmap => {
-        this.set({
-          locationMap: lmap,
-          item: mockItemById
+          resolve(this.set({
+            locationMap: m
+          }))
         })
+      })
+      // get barcode from path route
+      .then(() => {
+        const path = this.get("path")
+        const productId = "NO:02030000"
+        if (path.barcode) {
+          return Promise.resolve(fetch(`${api}/item/${productId}/${path.barcode}`))
+        } else {
+          return Promise.reject("No shelf id")
+        }
+      })
+      .then(res  => { return res.json() })
+      .then(json => {
+        console.log(json)
+        return this.set({item: json})
+      })
+      .catch(err => {
+        console.log(`something broke: ${err}`)
       })
     },
     components: {
@@ -60,10 +79,10 @@
 
   .item-info {
     float: left;
-    width: 25%;
+    width: 20%;
   }
   .history {
     float: right;
-    width: 75%;
+    width: 80%;
   }
 </style>
