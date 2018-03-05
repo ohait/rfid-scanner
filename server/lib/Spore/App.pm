@@ -141,6 +141,7 @@ sub append_activity {
         }
 
         UPSERT tags => {
+            instance => $self->{instance},
             rfid => $rfid,
         } => {
             %data
@@ -149,6 +150,7 @@ sub append_activity {
 
     if ($id) {
         UPSERT items => {
+            instance => $self->{instance},
             item_supplier => $supplier,
             item_id => $id,
         } => {
@@ -162,6 +164,7 @@ sub append_activity {
     }
     # FULLTEXT index
     DELETE items_idx => {
+        instance => $self->{instance},
         item_supplier => $supplier,
         item_id => $id,
     };
@@ -173,6 +176,7 @@ sub append_activity {
             my %words = map { lc($_) => 1 } $word, unidecode($word), $w2, unidecode($w2);
             eval {
                 INSERT items_idx => {
+                    instance => $self->{instance},
                     item_supplier => $supplier,
                     item_id => $id,
                     word => $_,
@@ -184,6 +188,7 @@ sub append_activity {
     $actions = [$actions] unless ref $actions;
 
     INSERT history => {
+        instance => $self->{instance},
         dev => $dev,
         item_supplier => $supplier,
         item_id => $id,
