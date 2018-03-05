@@ -253,7 +253,7 @@ sub api_item {
             at => $self->epoch2iso($_{at}),
             actions => [split /, +/, $_{actions}//''],
             type => $_{type},
-            location => $_{shelf},
+            location => $_{loc},
             rfid => $_{rfid},
         };
         delete $row->{$_} for grep { not defined $row->{$_} } keys %$row;
