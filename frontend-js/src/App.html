@@ -1,5 +1,4 @@
 <div>
-  <RouterLink to="/">Home</RouterLink>
   <RouterLink to="/shelf">Shelf</RouterLink>
   <div id="app"></div>
 </div>
@@ -7,14 +6,13 @@
 <script>
   import SvelteRouter from 'svelte-router'
   /* PAGES */
-  import Home from './pages/Home.html'
   import Shelf from './pages/Shelf.html'
   import Item from './pages/Item.html'
   import NotFound from './pages/NotFound.html'
   /* ROUTES */
   const { createRouter, RouterLink } = SvelteRouter
   const router = createRouter({
-    '/': Home,
+    '/': Shelf,
     '/shelf': Shelf,
     '/shelf/:shelfId': Shelf,
     '/item/:barcode': {

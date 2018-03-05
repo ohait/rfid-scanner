@@ -1,7 +1,7 @@
 <div class="container">
   <div class="shelf-list"><ShelfList shelves="{{ shelves }}" :locationMap /></div>
   {{#if path.shelfId}}
-    {{path.shelfId}}
+    Shelf: {{path.shelfId}}
     <div class="shelf-content"><ShelfContent :shelf :locationMap /></div>
   {{/if}}
 </div>

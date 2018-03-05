@@ -8,7 +8,6 @@
         {{#each shelves.results as res}}
           <tr>
             <td>
-              <!-- clickable tree of shelves -->
               {{#each [...locationMap.get(res.loc)] as loc, idx}}
                 <div class="shelflink">
                   <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.loc)].length - 1) }}.{{/if}}

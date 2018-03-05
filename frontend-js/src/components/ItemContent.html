@@ -7,9 +7,8 @@
     </form>
     <hr size="1">
     <h2>transaction log</h2>
-    <span>Input barcode: {{ barcode }}</span><br>
-    <span>Item ID: {{ item.response.item_id }}</span><br>
-    <span>{{ item.response.meta.author }}</span><br>
+    <span>Barcode: {{ barcode }}</span><br>
+    <span>Author: {{ item.response.meta.author }}</span><br>
 
     <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
       <thead>
@@ -38,6 +37,7 @@
     methods: {
       handleSubmit(event) {
         event.preventDefault()
+        // no action here yet
         console.log(event)
       }
     }
@@ -47,13 +47,6 @@
   .shelflink {
     display: inline-block;
     white-space: nowrap;
-  }
-  .shelflink div {
-    display: inline-block;
-  }
-  .shelflink div:hover > a {
-    background-color: #fa5;
-    color: black;
   }
   a:hover {
     background-color: #fa5;
@@ -73,18 +66,5 @@
     border-top: none;
     border-left: none;
     font-size: 12px;
-  }
-  tr.hit {
-      background-color: #fbb;
-  }
-  .hex {
-      font-size: 60%;
-      border: 1px solid gray;
-      margin-right: 1px;
-      background-color: gray;
-      color: white;
-  }
-  .hex-utf {
-      background-color: #ddd;
   }
 </style>
