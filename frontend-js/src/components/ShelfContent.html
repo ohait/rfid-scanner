@@ -1,0 +1,61 @@
+<div>
+  <table border=1 cellspacing=0 cellpadding=3>
+    <thead>
+      <tr><th>at</th><th>location</th><th>barcode</th><th>callnum</th><th width="15%">author</th><th>title</th><th>last</th></tr>
+    </thead>
+    <tbody>
+      {{#if shelf.results}}
+        {{#each shelf.results as res}}
+          <tr>
+            <td style="background-color: #a9fbaf;">
+              <abbr title="{{res.last_at.iso8601}}">{{res.last_at.ago}} ago</abbr>
+            </td>
+            <td>
+              {{#each [...locationMap.get(res.tags[0].temporary.loc)] as loc, idx}}
+                  <div class="shelflink">
+                    <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.tags[0].temporary.loc)].length - 1) }}.{{/if}}
+                  </div>
+              {{/each}}
+            </td>
+            <td><a href="/#/item/{{res.item_id}}">{{res.item_id}}</a></td>
+            <td><abbr title="{{res.data.callnumber}}">{{res.data.callnumber}}</abbr></td>
+            <td><abbr style="text-decoration:&nbsp;none;" title="{{res.data.author}}">{{res.data.author}}</abbr></td>
+            <td>{{res.data.title}}</td>
+            <td><abbr title="{{res.last_at.iso8601}}">{{res.last_at.ago}}</abbr></td>
+          </tr>
+        {{/each}}
+      {{/if}}
+  </table>
+</div>
+<style>
+  .shelflink {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .shelflink div {
+    display: inline-block;
+  }
+  .shelflink div:hover > a {
+    background-color: #fa5;
+    color: black;
+  }
+  a:hover {
+    background-color: #fa5;
+    color: black;
+  }
+  td {
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 3px;
+    border-top: none;
+    border-left: none;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  th {
+    background-color: #ccc;
+    border-top: none;
+    border-left: none;
+    font-size: 12px;
+  }
+</style>
