@@ -43,6 +43,11 @@ sub dispatch {
     $f =~ m{(^|\/)\.} and die "404 Invalid path '$f'";
     warn Dumper("static/$f", -d "static/$f");
     $f .= "index.html" if -f "static/$f/index.html";
+
+    # always serve index.html unless we find the file
+    # this way paths like /item/1234 will be translated as /index.html
+    -r "static/$f" or $f = "index.html";
+
     -r "static/$f" or die "404 Not Found '$f'";
 
     open my $fh, '<:raw', "static/$f" or die "403 Forbidden: $!";
