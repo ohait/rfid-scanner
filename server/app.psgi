@@ -4,8 +4,11 @@ use strict;
 use warnings;
 use utf8;
 
-require "./Config.pm";
+use lib 'lib';
 
+BEGIN {
+require "./Config.pm";
+};
 
 #use Carp::Always;
 use Carp;
@@ -19,7 +22,6 @@ use Time::HiRes;
 use JSON; our $JSON = JSON->new()->utf8(1)->pretty(1)->canonical(1);
 use DBI::Sugar;
 
-use lib 'lib';
 
 TX {
     my (undef, $ct) = SELECT_ROW "count(1) FROM items" => [];
