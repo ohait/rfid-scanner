@@ -1,15 +1,16 @@
 <div>
-  {{#if item}}
-    <h1>-- {{ barcode }} {{ item.response.meta.title }}</h1>
-    <form on:submit='handleSubmit( event )'>
-    <label for="code">Barcode: </label>
-    <input id="code" name="code" class="ui-autocomplete-input" autocomplete="off">
-    </form>
-    <hr size="1">
-    <h2>transaction log</h2>
-    <span>Barcode: {{ barcode }}</span><br>
-    <span>Author: {{ item.response.meta.author }}</span><br>
-
+  {{#if item && item.response }}
+    {{#if item.response.meta }}
+      <h1>-- {{ barcode }} {{ item.response.meta.title }}</h1>
+      <form on:submit='handleSubmit( event )'>
+      <label for="code">Barcode: </label>
+      <input id="code" name="code" class="ui-autocomplete-input" autocomplete="off">
+      </form>
+      <hr size="1">
+      <h2>transaction log</h2>
+      <span>Barcode: {{ barcode }}</span><br>
+      <span>Author: {{ item.response.meta.author }}</span><br>
+    {{/if}}
     <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
       <thead>
         <tr><th>at</th><th>shelf</th><th>type</th><th>rfid</th></tr>

@@ -2,12 +2,14 @@
   <!--<img src="https://static.deichman.no/thumb/p54427b83336da5e04f48570efe6599d6.jpg">-->
   {{#if item && locationMap}}
   <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
-    <tr><th colspan=2>{{ item.response.meta.title }}</th></tr>
-    <tr><td>author</td><td>{{ item.response.meta.author }}</td></tr>
-    <tr><td>cn</td><td><abbr title="{{ item.response.meta.callnumber }}">{{ item.response.meta.callnumber }}</abbr></td></tr>
-    <tr><td>barcode</td><td><a href="/#/item/{{ item.item_id }}">{{ item.item_id }}</a></td></tr>
-    <tr><td>bibnum</td><td>{{ item.response.meta.biblionumber }} [<a href="https://intra.deichman.no/cgi-bin/koha/catalogue/detail.pl?biblionumber={{ item.response.meta.biblionumber }}">Koha</a>]</td></tr>
-    <tr><td>pubid</td><td>notgiveninapi</td></tr>
+    {{#if item.response && item.response.meta }}
+      <tr><th colspan=2>{{ item.response.meta.title }}</th></tr>
+      <tr><td>author</td><td>{{ item.response.meta.author }}</td></tr>
+      <tr><td>cn</td><td><abbr title="{{ item.response.meta.callnumber }}">{{ item.response.meta.callnumber }}</abbr></td></tr>
+      <tr><td>barcode</td><td><a href="/#/item/{{ item.item_id }}">{{ item.item_id }}</a></td></tr>
+      <tr><td>bibnum</td><td>{{ item.response.meta.biblionumber }} [<a href="https://intra.deichman.no/cgi-bin/koha/catalogue/detail.pl?biblionumber={{ item.response.meta.biblionumber }}">Koha</a>]</td></tr>
+      <tr><td>pubid</td><td>notgiveninapi</td></tr>
+    {{/if}}
     <!-- TODO, dont render until locationMap is set -->
       {{#each item.response.tags as tag}}
         <tr><th colspan=2>tag</th></tr>
