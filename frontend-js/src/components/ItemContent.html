@@ -18,11 +18,13 @@
         {{#each item.response.history as it}}
           <tr><td>{{it.at.ago}} ago</td>
             <td>
-              {{#each [...locationMap.get(it.location)] as loc, idx}}
-                <div class="shelflink">
-                  <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(it.location)].length - 1) }}.{{/if}}
-                </div>
-              {{/each}}
+              {{#if (it.location) }}
+                {{#each [...locationMap.get(it.location)] as loc, idx}}
+                  <div class="shelflink">
+                    <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(it.location)].length - 1) }}.{{/if}}
+                  </div>
+                {{/each}}
+              {{/if}}
             </td>
             <td>{{it.actions.join(' ')}}</td><td>{{it.dev}}</td></tr>
         {{/each}}

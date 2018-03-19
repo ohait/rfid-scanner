@@ -11,11 +11,14 @@
               <abbr title="{{res.last_at.iso8601}}">{{res.last_at.ago}} ago</abbr>
             </td>
             <td>
-              {{#each [...locationMap.get(res.tags[0].temporary.loc)] as loc, idx}}
+              <!-- TODO - tags before/after? -->
+              {{#if (res.tags[0].temporary.loc) }}
+                {{#each [...locationMap.get(res.tags[0].temporary.loc)] as loc, idx}}
                   <div class="shelflink">
                     <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.tags[0].temporary.loc)].length - 1) }}.{{/if}}
                   </div>
-              {{/each}}
+                {{/each}}
+              {{/if}}
             </td>
             <td><a href="/#/item/{{res.item_id}}">{{res.item_id}}</a></td>
             <td><abbr title="{{res.data.callnumber}}">{{res.data.callnumber}}</abbr></td>

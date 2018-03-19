@@ -25,9 +25,9 @@
             <!-- tag.permanent.loc -->
             {{#if tag.permanent.loc}}
               {{#each [...locationMap.get(tag.permanent.loc)] as loc, idx}}
-                    <div class="shelflink">
-                      <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(tag.permanent.loc)].length - 1) }}.{{/if}}
-                    </div>
+                <div class="shelflink">
+                  <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(tag.permanent.loc)].length - 1) }}.{{/if}}
+                </div>
               {{/each}}
             {{/if}}
           </td>
@@ -40,9 +40,9 @@
             <!-- tag.temporary.loc -->
             {{#if tag.temporary.loc}}
               {{#each [...locationMap.get(tag.temporary.loc)] as loc, idx}}
-                    <div class="shelflink">
-                      <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(tag.temporary.loc)].length - 1) }}.{{/if}}
-                    </div>
+                <div class="shelflink">
+                  <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(tag.temporary.loc)].length - 1) }}.{{/if}}
+                </div>
               {{/each}}
             {{/if}}
         </tr>
