@@ -53,14 +53,15 @@ sub process {
             }
 
             # should you PICK the item and move it elsewhere?
-            if (my $dest = $record->{dest} and my $shelf = $record->{shelf}) {
-                warn "[$shelf]~[$dest]";
-                if ($shelf !~ m{^\Q$dest}) {
+            if (my $dest = $record->{dest} and my $loc = $record->{loc}) {
+                warn "[$loc]~[$dest]";
+                if ($loc !~ m{^\Q$dest}) {
                     $res->append(PIMG => $record);
                     push @{$record->{actions}//=[]}, 'pick';
                 }
             }
 
+            warn Dumper($record);
             # store the entries in the DB
             $app->append_activity({%$record, dev => $dev});
 

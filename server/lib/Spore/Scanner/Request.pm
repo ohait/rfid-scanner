@@ -37,13 +37,13 @@ sub new {
     $data =~ m{^\x42\x42} or die "invalid data: magic number missing";
     my $dev = join(':', map { sprintf("%02x", ord($_)); } split //, substr($data, 2, 6));
 
-    my $shelf = substr($data, 8, 32);
-    $shelf =~ s{[\x00].*$}{};
+    my $loc = substr($data, 8, 32);
+    $loc =~ s{[\x00].*$}{};
     $data = substr($data, 8+32);
 
     my $self = bless {
         dev => $dev,
-        init_shelf => $shelf,
+        init_loc => $loc,
         records => [],
     }, $type;
 
@@ -71,9 +71,9 @@ sub new {
         if (my $obj = $self->parse_record($record_data)) {
             $record->{$_} //= $obj->{$_} for keys %$obj;
             if ($obj->{type} eq 'shelf') {
-                $shelf = $record->{shelf};
+                $loc = $record->{loc};
             } else {
-                $record->{shelf}//=$shelf;
+                $record->{loc}//=$loc;
             }
         }
         if ('CODE' eq ref $hook) {
@@ -119,12 +119,12 @@ sub _crc {
 sub parse_record {
     my ($self, $data) = @_;
     #warn _hexdump($data);
-    if ($data =~ m{^.?(SHELF\#)(?<shelf>.*)}) {
-        my $shelf = $+{shelf};
-        $shelf =~ s{\0}{}g;
+    if ($data =~ m{^.?(SHELF\#)(?<loc>.*)}) {
+        my $loc = $+{loc};
+        $loc =~ s{\0}{}g;
         return {
             type => 'shelf',
-            shelf => $shelf,
+            loc => $loc,
         };
     }
 
