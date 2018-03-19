@@ -63,6 +63,7 @@
       })
       .catch(err => {
         console.log(`something broke: ${err}`)
+        throw err
       })
     },
     components: {
