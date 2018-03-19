@@ -146,6 +146,31 @@ GET /api/item/NO:02030000/03010034815003
    item_id: "03010034815003",
    item_supplier: "NO:02030000",
    response: {
+      around : {
+         after : [
+            {
+               at : {
+                  epoch : "1521448192.9533",
+                  iso8601 : "2018-03-19T08:29:52"
+               },
+               item_id : "03010034815003",
+               item_supplier : "NO:02030000",
+               loc : "hutl.stack.foo",
+               meta : {
+                  author : "Ottesen-Jensen, Elise",
+                  biblionumber : "34815",
+                  callnumber : [ "", "612.6", "Ott", "" ],
+                  copynumber : "3",
+                  default_loc : "hutl.stack.green",
+                  title : "Når barnet spør"
+               },
+               product_id : "34815",
+               rfid : "e0:04:01:50:5a:89:bd:e3"
+            },
+			[...]
+         ],
+         before : [...]
+      },
       history: [
          {
             action: null,
