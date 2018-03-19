@@ -28,6 +28,9 @@ sub toascii {
 
 sub tocn {
     my ($x) = @_;
+    if ("ARRAY" eq ref $x) {
+        $x = join ' ', @$x;
+    }
     $x =~ s{,+}{ }g; $x =~ s{^ }{};
     # TODO expand to latin-1? unidecode anything else
     $x =~ s{([^\x00-\x7FåæøÅÆØ])}{

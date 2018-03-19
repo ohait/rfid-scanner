@@ -81,7 +81,7 @@ sub api {
         local $_ = $req;
         return $self->{api}->$m(@arguments);
     };
-    warn Dumper($path, $out)."...";
+    #warn Dumper($path, $out)."...";
     return $out // {};
 }
 
