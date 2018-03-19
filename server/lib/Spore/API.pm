@@ -158,7 +158,8 @@ sub api_product {
     };
 
     SELECT "* FROM items WHERE instance = ? AND item_supplier = ? AND product_id = ?"
-    => [$self->{instance}, $item_supplier, $product_id] => sub {
+    => [$self->{instance}, $item_supplier, $product_id] 
+    => sub {
         push @{$out->{response}}, {
             item_supplier => $_{item_supplier},
             item_id => $_{item_id},
@@ -224,8 +225,11 @@ sub api_item {
         history => [],
     };
 
-    SELECT "* FROM tags WHERE instance = ? AND item_supplier = ? AND item_id = ?"
-    => [$self->{instance}, $item_supplier, $item_id] => sub {
+    my $ploc;
+    SELECT "* FROM tags WHERE instance = ? AND item_supplier = ? AND item_id = ? ORDER BY ploc_at DESC"
+    => [$self->{instance}, $item_supplier, $item_id]
+    => sub {
+        $ploc //= $_{ploc};
         my $tag = {
             rfid => $_{rfid},
             permanent => {
@@ -246,8 +250,13 @@ sub api_item {
         push @{$out->{response}->{tags}}, $tag;
     };
 
+    my $last_perm;
     # TODO maybe move to another api? TODO group actions that are close in time
-    SELECT "* FROM history h WHERE instance = ? AND item_supplier = ? AND item_id = ? ORDER BY at DESC" => [$self->{instance}, $item_supplier, $item_id] => sub {
+    SELECT "* FROM history h WHERE instance = ? AND item_supplier = ? AND item_id = ? ORDER BY at DESC"
+    => [$self->{instance}, $item_supplier, $item_id]
+    => sub {
+        $last_perm //= \%_ if $_{loc} eq $ploc;
+        warn "##### [$_{loc}|$ploc] ";
         my $row = {
             dev => $_{dev},
             at => $self->epoch2iso($_{at}),
@@ -259,6 +268,46 @@ sub api_item {
         delete $row->{$_} for grep { not defined $row->{$_} } keys %$row;
         push @{$out->{response}->{history}}, $row;
     };
+
+    if ($last_perm) {
+        my $around = $out->{response}->{around} = {
+            entry => $last_perm,
+            before => [],
+            after => [],
+        };
+        my %seen; $seen{$item_supplier}->{$item_id}++;
+        SELECT "* FROM history h JOIN items i USING(instance, item_supplier, item_id) WHERE instance = ? AND dev = ? AND at >= ? AND at <= ? AND item_id IS NOT NULL ORDER BY at DESC LIMIT 5"
+        => [$self->{instance}, $last_perm->{dev}, $last_perm->{at}-150, $last_perm->{at}]
+        => sub {
+            return if $seen{$_{item_supplier}}->{$_{item_id}}++;
+            my $row = {
+                at => $self->epoch2iso($_{at}),
+                item_supplier => $_{item_supplier},
+                item_id => $_{item_id},
+                rfid => $_{rfid},
+                loc => $_{loc},
+                product_id => $_{product_id},
+                meta => $self->json_dec($_{json}),
+            };
+            push @{$around->{before}}, $row;
+        };
+
+        SELECT "* FROM history h JOIN items i USING(instance, item_supplier, item_id) WHERE instance = ? AND dev = ? AND at >= ? AND at <= ? AND item_id IS NOT NULL ORDER BY at ASC LIMIT 5"
+        => [$self->{instance}, $last_perm->{dev}, $last_perm->{at}, $last_perm->{at}+150]
+        => sub {
+            return if $seen{$_{item_supplier}}->{$_{item_id}}++;
+            my $row = {
+                at => $self->epoch2iso($_{at}),
+                item_supplier => $_{item_supplier},
+                item_id => $_{item_id},
+                rfid => $_{rfid},
+                loc => $_{loc},
+                product_id => $_{product_id},
+                meta => $self->json_dec($_{json}),
+            };
+            push @{$around->{after}}, $row;
+        };
+    }
 
     return $out;
 }
