@@ -7,33 +7,32 @@
       {{#if shelf.results}}
         {{#each shelf.results as res}}
           <tr>
-            <td style="background-color: #a9fbaf;">
-              <abbr title="{{res.last_at.iso8601}}">{{res.last_at.ago}} ago</abbr>
-            </td>
-            <td>
-              <!-- TODO - tags before/after? -->
-              {{#if (res.tags[0].temporary.loc) }}
-                {{#each [...locationMap.get(res.tags[0].temporary.loc)] as loc, idx}}
-                  <div class="shelflink">
-                    <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.tags[0].temporary.loc)].length - 1) }}.{{/if}}
-                  </div>
-                {{/each}}
-              {{/if}}
-            </td>
+            <td><abbr title="{{res.last_at.iso8601}}">{{res.last_at.ago || res.last_at.iso8601}}</abbr></td>
+            <td><ShelfLink loc="{{res.tags[0].temporary.loc}}"></td>
             <td><a href="/#/item/{{res.item_id}}">{{res.item_id}}</a></td>
-            <td><abbr title="{{res.data.callnumber}}">{{res.data.callnumber}}</abbr></td>
-            <td><abbr style="text-decoration:&nbsp;none;" title="{{res.data.author}}">{{res.data.author}}</abbr></td>
-            <td>{{res.data.title}}</td>
-            <td><abbr title="{{res.last_at.iso8601}}">{{res.last_at.ago}}</abbr></td>
+            <td>{{res.meta.callnumber}}</td>
+            <td style="max-width: 200px;"><abbr title="{{res.meta.author}}">{{res.meta.author}}</abbr></td>
+            <td style="max-width: 200px;"><abbr title="{{res.meta.title}}">{{res.meta.title}}</abbr></td>
           </tr>
         {{/each}}
       {{/if}}
   </table>
 </div>
+<script>
+    import SvelteRouter from 'svelte-router'
+    import ShelfLink from '../components/ShelfLink.html'
+    export default {
+        props: ['shelves'],
+        components: {ShelfLink,},
+    }
+</script>
 <style>
   a:hover {
     background-color: #fa5;
     color: black;
+  }
+  abbr {
+    text-decoration: none;
   }
   td {
     padding: 2px;
@@ -43,6 +42,8 @@
     border-left: none;
     white-space: nowrap;
     font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   th {
     background-color: #ccc;

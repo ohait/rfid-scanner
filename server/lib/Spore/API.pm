@@ -115,7 +115,7 @@ sub api_shelf {
         my $item = $items{$_{instance}}->{$_{item_supplier}}->{$_{item_id}};
         if (!$item) {
             $items{$_{instance}}->{$_{item_supplier}}->{$_{item_id}} = $item = {
-                data => $json,
+                meta => $json,
                 product_id => $_{product_id},
                 item_supplier => $_{item_supplier},
                 item_id => $_{item_id},
@@ -137,7 +137,7 @@ sub api_shelf {
                 dev => $_{tloc_dev},
             },
             data => {
-                base64 => encode_base64($_{data}, ''),
+                base64 => encode_base64($_{data}//'', ''),
             },
         };
     };

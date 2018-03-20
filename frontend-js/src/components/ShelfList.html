@@ -6,18 +6,14 @@
     <tbody>
       {{#if shelves.results}}
         {{#each shelves.results as res}}
+          {{#if res.loc }}
           <tr>
             <td>
-              {{#if (res.loc)}}
-                {{#each [...locationMap.get(res.loc)] as loc, idx}}
-                  <div class="shelflink">
-                    <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(res.loc)].length - 1) }}.{{/if}}
-                  </div>
-                {{/each}}
-              {{/if}}
+                <ShelfLink loc="{{res.loc}}">
             </td>
             <td>{{res.tags}}</td>
           </tr>
+          {{/if}}
         {{/each}}
       {{/if}}
     </tbody>
@@ -25,8 +21,10 @@
 </div>
 <script>
   import SvelteRouter from 'svelte-router'
+  import ShelfLink from '../components/ShelfLink.html'
   export default {
-    props: ['shelves']
+    props: ['shelves'],
+    components: {ShelfLink,},
   }
 </script>
 <style>
