@@ -255,8 +255,7 @@ sub api_item {
     SELECT "* FROM history h WHERE instance = ? AND item_supplier = ? AND item_id = ? ORDER BY at DESC"
     => [$self->{instance}, $item_supplier, $item_id]
     => sub {
-        $last_perm //= \%_ if $_{loc} eq $ploc;
-        warn "##### [$_{loc}|$ploc] ";
+        $last_perm //= \%_ if $ploc and $_{loc} and $_{loc} eq $ploc;
         my $row = {
             dev => $_{dev},
             at => $self->epoch2iso($_{at}),
@@ -271,7 +270,7 @@ sub api_item {
 
     if ($last_perm) {
         my $around = $out->{response}->{around} = {
-            entry => $last_perm,
+            #entry => $last_perm,
             before => [],
             after => [],
         };
