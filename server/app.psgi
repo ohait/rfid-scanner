@@ -31,6 +31,7 @@ TX {
 sub dispatch {
     my ($req) = @_;
     my ($route, $path) = $req->path =~ m{^/(\w+)(.*)};
+    $route //= '';
 
     if ($route eq 'arduino') {
         return $::APP->arduino($req->uri, $req->raw_body, $req);
@@ -43,7 +44,7 @@ sub dispatch {
     }
     my $f = $req->path;
     $f =~ m{(^|\/)\.} and die "404 Invalid path '$f'";
-    warn Dumper("static/$f", -d "static/$f");
+    #warn Dumper("static/$f", -d "static/$f");
     $f .= "index.html" if -f "static/$f/index.html";
 
     # always serve index.html unless we find the file
