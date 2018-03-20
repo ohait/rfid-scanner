@@ -52,7 +52,7 @@ sub epoch2human {
     return $k => $h."h" if $h<=32;
     $h = int($d/86400+0.5);
     return $k => $h."d" if $h<=30;
-    return;
+    return $k => DateTime->from_epoch(epoch => $epoch)->ymd;
 }
 sub epoch2iso {
     my ($self, $epoch) = @_;
@@ -66,7 +66,7 @@ sub epoch2iso {
 
 sub api_shelves {
     my ($self, $root) = @_;
-    $root =~ m{^[\w\.]*$} or die "400 Invalid shelf: '$root'";
+    #$root =~ m{^[\w\.]*$} or die "400 Invalid shelf: '$root'";
 
     my $out = {
         at => $self->epoch2iso(Time::HiRes::time()),
@@ -244,7 +244,7 @@ sub api_item {
             },
             #last_seen => $_{last_at},
             data => {
-                base64 => encode_base64($_{data}, ''),
+                base64 => encode_base64($_{data}//'', ''),
             },
         };
         push @{$out->{response}->{tags}}, $tag;
