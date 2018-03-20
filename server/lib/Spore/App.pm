@@ -95,11 +95,13 @@ sub hub {
     # expand the lists with the custom decorator
     my @records;
     for my $msg (@$list) {
-        $msg->{client_IP} or die "missing IP"; # Should we use the remote addr?
         my $record = $self->{hub_hook}->($msg);
         next unless $record;
         push @records, $record;
     }
+    open my $LOG, '>>', '/var/log/spore/hub.log';
+    print $LOG "".gmtime()." ".$self->json_enc(\@records);
+    close $LOG;
 
     # sync with ILS
     $self->{ILS}->sync(@records);
