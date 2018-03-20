@@ -311,6 +311,30 @@ sub api_item {
     return $out;
 }
 
+sub api_dev {
+    my ($self, $dev) = @_;
+
+    my $out = {
+        at => $self->epoch2iso(Time::HiRes::time()),
+        results => [],
+    };
+
+    SELECT "* FROM history h JOIN items i USING(instance, item_supplier, item_id) WHERE instance = ? AND dev = ? ORDER BY at DESC LIMIT 1000"
+    => [$self->{instance}, $dev] => sub {
+        push @{$out->{results}}, {
+            at => $self->epoch2iso($_{at}),
+            item_supplier => $_{item_supplier},
+            item_id => $_{item_id},
+            rfid => $_{rfid},
+            loc => $_{loc},
+            product_id => $_{product_id},
+            meta => $self->json_dec($_{json}),
+            actions => [split /,/, $_{actions}],
+        };
+    };
+    return $out;
+};
+
 sub api_search {
     my ($self) = @_;
     my $q = $_->param('q') or die "404 missing {q} parameter";
