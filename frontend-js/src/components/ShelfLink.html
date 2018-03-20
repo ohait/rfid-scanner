@@ -1,0 +1,34 @@
+<div>
+    {{#if loc }}
+        {{#each locSplit(loc) as l }}
+            {{l.sep}}<a href="/#/shelf/{{l.link}}">{{l.name}}</a>
+        {{/each}}
+    {{ else }}
+        N/A
+    {{/if }}
+</div>
+<script>
+  import SvelteRouter from 'svelte-router'
+  export default {
+    props: ["loc"],
+    helpers: {
+        locSplit: function (loc) {
+            var x = "";
+            var sep = "";
+            var locs = loc.split('.').map(function(r) {
+                x = x + sep + r;
+                var out = {
+                    sep: sep,
+                    name: r,
+                    link: x,
+                };
+                sep = ".";
+                return out;
+            });
+            return locs;
+        }
+    }
+  }
+</script>
+<style>
+</style>

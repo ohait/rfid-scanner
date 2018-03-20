@@ -1,62 +1,44 @@
 <div>
-  <!--<img src="https://static.deichman.no/thumb/p54427b83336da5e04f48570efe6599d6.jpg">-->
-  {{#if item && locationMap}}
+  {{#if item}}
   <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
     {{#if item.response && item.response.meta }}
+      <tr><td colspan=2>
+        <img src="https://img.deichman.no/biblionumber/{{item.response.meta.biblionumber}}">
+      </td>
       <tr><th colspan=2>{{ item.response.meta.title }}</th></tr>
       <tr><td>author</td><td>{{ item.response.meta.author }}</td></tr>
-      <tr><td>cn</td><td><abbr title="{{ item.response.meta.callnumber }}">{{ item.response.meta.callnumber }}</abbr></td></tr>
+      <tr><td>cn</td><td>{{ item.response.meta.callnumber }}</td></tr>
       <tr><td>barcode</td><td><a href="/#/item/{{ item.item_id }}">{{ item.item_id }}</a></td></tr>
       <tr><td>bibnum</td><td>{{ item.response.meta.biblionumber }} [<a href="https://intra.deichman.no/cgi-bin/koha/catalogue/detail.pl?biblionumber={{ item.response.meta.biblionumber }}">Koha</a>]</td></tr>
-      <tr><td>pubid</td><td>notgiveninapi</td></tr>
     {{/if}}
     <!-- TODO, dont render until locationMap is set -->
       {{#each item.response.tags as tag}}
         <tr><th colspan=2>tag</th></tr>
-        <tr>
-          <td>last_at</td>
-          {{#if tag.permanent.at }}
-            <td style="background: #99fec8; "><abbr title="Tue Feb 27 10:16:09 2018">CHECK {{ tag.permanent.at.iso8601 }}</abbr></td>
-          {{/if}}
-        </tr>
-        <tr><td>last_dev</td><td>hutl.rfidhub.10.172.3.70</td></tr>
-        <tr><td>rfid</td><td><a href="/#/dev/{{ tag.permanent.dev }}">CHECK {{ tag.permanent.dev }}</a></td></tr>
-        <tr>
-          <td>shelf</td>
-          <td>
-            <!-- tag.permanent.loc -->
-            {{#if tag.permanent.loc}}
-              {{#each [...locationMap.get(tag.permanent.loc)] as loc, idx}}
-                <div class="shelflink">
-                  <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(tag.permanent.loc)].length - 1) }}.{{/if}}
-                </div>
-              {{/each}}
-            {{/if}}
-          </td>
-        </tr>
-        <tr><td>shelf_at</td><td style="background: #f4a53f; "><abbr title="Tue Jul 18 12:58:05 2017">2017-07-18</abbr></td></tr>
-        <tr><td>shelf_dev</td><td><span class="hex">NULL</span></td></tr>
-        <tr>
-          <td>temp</td>
-          <td>
-            <!-- tag.temporary.loc -->
-            {{#if tag.temporary.loc}}
-              {{#each [...locationMap.get(tag.temporary.loc)] as loc, idx}}
-                <div class="shelflink">
-                  <a href="/#/shelf/{{loc.link}}">{{loc.name}}</a>{{#if (idx != [...locationMap.get(tag.temporary.loc)].length - 1) }}.{{/if}}
-                </div>
-              {{/each}}
-            {{/if}}
-        </tr>
-        <tr><td>temp_at</td><td style="background: #99fec8; "><abbr title="Tue Feb 27 10:16:09 2018">CHECK {{ tag.temporary.at.iso8601 }}</abbr></td></tr>
+        <tr><td>rfid</td><td>{{ tag.rfid }}</td></tr>
+        {{#if tag.permanent.at }}
+            <tr><td>perm</td><td>
+            <ShelfLink loc="{{tag.permanent.loc}}" />
+            </td></tr>
+            <tr><td>at</td><td><abbr title="{{ tag.permanent.at.iso8601 }}">{{ tag.permanent.at.ago || tag.permanent.at.iso8601 }}</abbr></td></tr>
+            <tr><td>dev</td><td><a href="/#/dev/{{ tag.permanent.dev }}">{{ tag.permanent.dev }}</a></td></tr>
+        {{/if}}
+        {{#if tag.temporary.at }}
+            <tr><td>temp</td><td>
+            <ShelfLink loc="{{tag.temporary.loc}}" />
+            </td></tr>
+            <tr><td>at</td><td><abbr title="{{ tag.temporary.at.iso8601 }}">{{ tag.temporary.at.ago || tag.temporary.at.iso8601 }}</abbr></td></tr>
+            <tr><td>dev</td><td><a href="/#/dev/{{ tag.temporary.dev }}">{{ tag.temporary.dev }}</a></td></tr>
+        {{/if}}
       {{/each}}
     </table>
   {{/if}}
 </div>
 <script>
   import SvelteRouter from 'svelte-router'
+  import ShelfLink from '../components/ShelfLink.html'
   export default {
-    props: ["locationMap", "item"]
+    props: ["item"],
+    components: {ShelfLink,},
   }
 </script>
 <style>
