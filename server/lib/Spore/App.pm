@@ -189,16 +189,20 @@ sub append_activity {
     my $actions = $record->{actions}//[];
     $actions = [$actions] unless ref $actions;
 
-    INSERT history => {
-        instance => $self->{instance},
-        dev => $dev,
-        item_supplier => $supplier,
-        item_id => $id,
-        rfid => $rfid,
-        at => Time::HiRes::time(),
-        actions => join(", ", @$actions),
-        loc => $record->{loc},
-    };
+    $record->{at} //= Time::HiRes::time();
+    eval {
+        INSERT history => {
+            instance => $self->{instance},
+            dev => $dev,
+            item_supplier => $supplier,
+            item_id => $id,
+            rfid => $rfid,
+            at => $record->{at},
+            actions => join(", ", @$actions),
+            loc => $record->{loc},
+        };
+        1;
+    } or warn "IGNORED: $@";
 }
 
 1;
