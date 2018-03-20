@@ -4,10 +4,15 @@ use strict;
 use warnings;
 use utf8;
 
+print "started at ".gmtime()." [$$]\n";
+
 my $DEV = "ILS";
 
 use lib 'lib';
 BEGIN { require "./Config.pm"; };
+
+$SIG{ALRM} = sub { die "TIMEOUT"; };
+alarm(50); # it will finish long before
 
 use LWP::UserAgent;
 use POSIX qw/strftime/;
@@ -64,3 +69,5 @@ TX {
     $data->{log} or die "no log entry";
     process(@{$data->{log}});
 };
+
+print "finished at ".gmtime()." [$$]\n";
