@@ -63,6 +63,10 @@ sub sync {
             if ('CODE' eq ref $self->{decorator}) {
                 local $_ = {%$_};
                 my %meta = $self->{decorator}->();
+                if (my $supplier = $meta{item_supplier}) {
+                    delete $meta{item_supplier};
+                    $item->{item_supplier} = $supplier;
+                }
                 for my $k (keys %meta) {
                     $meta->{$k} = $meta{$k};
                 }
