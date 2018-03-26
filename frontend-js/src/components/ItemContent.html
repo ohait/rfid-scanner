@@ -2,9 +2,10 @@
   {{#if item && item.response }}
     {{#if item.response.meta }}
       <h1>{{ item.response.meta.title }}</h1>
-      <form on:submit='handleSubmit( event )'>
-      <label for="code">Barcode: </label>
-      <input id="code" name="code" class="ui-autocomplete-input" autocomplete="off">
+      <form>
+      <label for="code">Search: </label>
+      <input id="code" name="code" bind:value=query class="ui-autocomplete-input" autocomplete="off">
+      <Search query="{{query}}"/>
       </form>
       <hr size="1">
     {{/if}}
@@ -27,16 +28,15 @@
 <script>
   import SvelteRouter from 'svelte-router'
   import ShelfLink from '../components/ShelfLink.html'
+  import Search from '../components/Search.html'
   export default {
     props: ["barcode", "item"],
-    components: {ShelfLink},
-    methods: {
-      handleSubmit(event) {
-        event.preventDefault()
-        // no action here yet
-        console.log(event)
-      }
-    }
+    data() {
+        return {
+            query: "",
+        };
+    },
+    components: {ShelfLink, Search},
   }
 </script>
 <style>
