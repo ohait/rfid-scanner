@@ -80,7 +80,7 @@ sub api_shelves {
             tags => $_{ct},
         };
     };
-    SELECT "tloc, count(distinct(item_id)) ct FROM tags WHERE instance = ? AND ploc IS NULL GROUP BY tloc ORDER BY tloc"
+    SELECT "tloc, count(distinct(item_id)) ct FROM tags WHERE instance = ? AND tloc IS NOT NULL GROUP BY tloc ORDER BY tloc"
     => [$self->{instance}] => sub {
         push @{$out->{results}}, {
             loc => ($_{tloc}//''),
@@ -108,10 +108,11 @@ sub api_shelf {
     UNION
     SELECT *, tloc_at at FROM tags LEFT JOIN items USING (instance, item_supplier, item_id)
     WHERE instance = ? AND tloc = ? AND item_id IS NOT NULL
-    ORDER BY at DESC"
+    ORDER BY at DESC LIMIT 200"
     => [$self->{instance}, $shelf, $self->{instance}, $shelf] => sub {
         my $json = $self->json_dec($_{json})//{};
         delete $_{json};
+        #if (not ref($json->{callnumber})) { $json->{callnumber} = [split /,/, $json->{callnumber}]; }
         my $item = $items{$_{instance}}->{$_{item_supplier}}->{$_{item_id}};
         if (!$item) {
             $items{$_{instance}}->{$_{item_supplier}}->{$_{item_id}} = $item = {
@@ -158,7 +159,7 @@ sub api_product {
     };
 
     SELECT "* FROM items WHERE instance = ? AND item_supplier = ? AND product_id = ?"
-    => [$self->{instance}, $item_supplier, $product_id] 
+    => [$self->{instance}, $item_supplier, $product_id]
     => sub {
         push @{$out->{response}}, {
             item_supplier => $_{item_supplier},
@@ -319,7 +320,7 @@ sub api_dev {
         results => [],
     };
 
-    SELECT "* FROM history h JOIN items i USING(instance, item_supplier, item_id) WHERE instance = ? AND dev = ? ORDER BY at DESC LIMIT 1000"
+    SELECT "* FROM history h JOIN items i USING(instance, item_supplier, item_id) WHERE instance = ? AND dev = ? ORDER BY at DESC LIMIT 200"
     => [$self->{instance}, $dev] => sub {
         push @{$out->{results}}, {
             at => $self->epoch2iso($_{at}),
@@ -340,8 +341,8 @@ sub api_search {
     my $q = $_->param('q') or die "404 missing {q} parameter";
 
 
-    my @results = SELECT "* FROM items_idx JOIN items USING(instance, item_supplier, item_id) WHERE word LIKE ? ORDER BY last_seen DESC LIMIT 10"
-    => [$q."%"] => sub {
+    my @results = SELECT "* FROM items_idx JOIN items USING(instance, item_supplier, item_id) WHERE instance = ? AND word LIKE ? ORDER BY last_seen DESC LIMIT 10"
+    => [$self->{instance}, $q."%"] => sub {
         my $meta = $self->json_dec($_{json});
         delete $_{json};
         return {
