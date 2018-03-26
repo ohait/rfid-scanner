@@ -26,7 +26,7 @@
     },
     oncreate() {
       // get shelves from api
-      const api = "http://spore.deichman.no/api"
+      const api = "/api"
       fetch(`${api}/shelves`)
       .then(res  => { return res.json() })
       .then(json => {
