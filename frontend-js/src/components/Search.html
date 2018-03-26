@@ -1,0 +1,87 @@
+<div>
+  <table border=1 cellspacing=0 cellpadding=3>
+    <tbody>
+      {{#await results}}
+        <tr><td colspan=5>...</td></tr>
+      {{then answer}}
+        {{log(answer)}}
+        {{#if answer }}
+          {{#if answer.results && answer.results.length }}
+              {{#each answer.results as res }}
+                <tr>
+                  <td><abbr title="{{res.last_seen.iso8601}}">{{res.last_seen.ago || res.last_seen.iso8601}}</abbr></td>
+                  <td><a href="/#/item/{{res.item_id}}">{{res.item_id}}</a></td>
+                  <td style="max-width: 200px;"><abbr title="{{res.meta.author}}">{{res.meta.author}}</abbr></td>
+                  <td style="max-width: 200px;"><abbr title="{{res.meta.title}}">{{res.meta.title}}</abbr></td>
+                </tr>
+              {{/each}}
+          {{else}}
+              <tr><td colspan=5>No Entries</td></tr>
+          {{/if}}
+        {{/if}}
+      {{catch error}}
+        <tr><td colspan=6>error: {{error}}</td></tr>
+      {{/await}}
+  </table>
+</div>
+<script>
+    import SvelteRouter from 'svelte-router'
+    import ShelfLink from '../components/ShelfLink.html'
+    export default {
+        props: ['query'],
+        data() {
+            return {
+                results: [],
+            };
+        },
+        components: {ShelfLink},
+        helpers: {
+            log: function(x) {
+                console.log(x);
+                return "";
+            },
+        },
+        oncreate() {
+            console.log(this);
+            const ob = this.observe('query', query => {
+                console.log("changed: ", query);
+                if (query && query.length>=3) {
+                    this.set({results:
+                        fetch(`/api/search?q=${query}`)
+                        .then(res => {
+                            return res.json();
+                        })
+                    });
+                } else {
+                    this.set({results: undefined});
+                }
+            });
+        },
+    }
+</script>
+<style>
+  a:hover {
+    background-color: #fa5;
+    color: black;
+  }
+  abbr {
+    text-decoration: none;
+  }
+  td {
+    padding: 2px;
+    padding-left: 5px;
+    padding-right: 3px;
+    border-top: none;
+    border-left: none;
+    white-space: nowrap;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  th {
+    background-color: #ccc;
+    border-top: none;
+    border-left: none;
+    font-size: 12px;
+  }
+</style>
