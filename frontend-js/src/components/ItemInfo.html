@@ -30,6 +30,16 @@
             <tr><td>dev</td><td><a href="/#/dev/{{ tag.temporary.dev }}">{{ tag.temporary.dev }}</a></td></tr>
         {{/if}}
       {{/each}}
+      {{#if item.response.around }}
+        <tr><th colspan=2>before</th></tr>
+        {{#each item.response.around.before as e }}
+          <tr><td colspan=2><a href="/#/item/{{ e.item_id }}">{{e.item_id}}</td></tr>
+        {{/each}}
+        <tr><th colspan=2>after</th></tr>
+        {{#each item.response.around.after as e }}
+          <tr><td colspan=2><a href="/#/item/{{ e.item_id }}">{{e.item_id}}</td></tr>
+        {{/each}}
+      {{/if}}
     </table>
   {{/if}}
 </div>
