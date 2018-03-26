@@ -8,7 +8,8 @@
       <tr><th colspan=2>{{ item.response.meta.title }}</th></tr>
       <tr><td>author</td><td>{{ item.response.meta.author }}</td></tr>
       <tr><td>cn</td><td>{{ item.response.meta.callnumber }}</td></tr>
-      <tr><td>barcode</td><td><a href="/#/item/{{ item.item_id }}">{{ item.item_id }}</a></td></tr>
+      <tr><td>supplier</td><td>{{ item.item_supplier }}</td></tr>
+      <tr><td>item_id</td><td>{{ item.item_id }}</td></tr>
       <tr><td>bibnum</td><td>{{ item.response.meta.biblionumber }} [<a href="https://intra.deichman.no/cgi-bin/koha/catalogue/detail.pl?biblionumber={{ item.response.meta.biblionumber }}">Koha</a>]</td></tr>
     {{/if}}
     <!-- TODO, dont render until locationMap is set -->
@@ -33,11 +34,11 @@
       {{#if item.response.around }}
         <tr><th colspan=2>before</th></tr>
         {{#each item.response.around.before as e }}
-          <tr><td colspan=2><a href="/#/item/{{ e.item_id }}">{{e.item_id}}</td></tr>
+          <tr><td colspan=2><a href="/#/item/{{e.item_supplier}}/{{ e.item_id }}">{{e.item_id}}</td></tr>
         {{/each}}
         <tr><th colspan=2>after</th></tr>
         {{#each item.response.around.after as e }}
-          <tr><td colspan=2><a href="/#/item/{{ e.item_id }}">{{e.item_id}}</td></tr>
+          <tr><td colspan=2><a href="/#/item/{{e.item_supplier}}/{{ e.item_id }}">{{e.item_id}}</td></tr>
         {{/each}}
       {{/if}}
     </table>

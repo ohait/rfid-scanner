@@ -3,7 +3,7 @@
     <ItemInfo :item :locationMap />
   </div>
   <div class="history">
-    <ItemContent barcode="{{path.barcode}}" :item :locationMap />
+    <ItemContent item_supplier="{{path.item_supplier}}" item_id="{{path.item_id}}" :item :locationMap />
   </div>
 </div>
 
@@ -14,6 +14,8 @@
   const { createRouter } = SvelteRouter
   export default {
     data: () => ({
+      item_id: null,
+      item_supplier: null,
       item: null,
       locationMap: null
     }),
@@ -46,14 +48,13 @@
           }))
         })
       })
-      // get barcode from path route
       .then(() => {
         const path = this.get("path")
-        const productId = "NO:02030000"
-        if (path.barcode) {
-          return Promise.resolve(fetch(`${api}/item/${productId}/${path.barcode}`))
+        if (path.item_id) {
+          return Promise.resolve(fetch(`${api}/item/${path.item_supplier}/${path.item_id}`))
         } else {
-          return Promise.reject("No shelf id")
+          console.log("ERR", path);
+          return Promise.reject("Missing item_id")
         }
       })
       .then(res  => { return res.json() })

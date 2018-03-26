@@ -11,16 +11,17 @@
     {{/if}}
     <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
       <thead>
-        <tr><th>at</th><th>shelf</th><th>action</th><th>rfid</th></tr>
+        <tr><th>at</th><th>shelf</th><th>action</th><th>rfid</th><th>dev</th></tr>
       </thead>
       <tbody>
         {{#each item.response.history as it}}
-          <tr><td><abbr title="{{it.at.iso8601}}">{{it.at.ago || it.at.iso8601}}</abbr></td>
-            <td>
-                <ShelfLink loc="{{it.location}}" />
-            </td>
+          <tr>
+            <td><abbr title="{{it.at.iso8601}}">{{it.at.ago || it.at.iso8601}}</abbr></td>
+            <td><ShelfLink loc="{{it.location}}" /></td>
             <td><div class="compact">{{#each it.actions as action }}<div>{{action}}</div>{{/each}}</div></td>
-            <td><abbr title="{{it.dev || 'N/A'}}">{{it.rfid || 'N/A'}}</abbr></td></tr>
+            <td>{{it.rfid || 'N/A'}}</td>
+            <td>{{it.dev || 'N/A'}}</td>
+          </tr>
         {{/each}}
       </tbody>
     </table>
@@ -31,7 +32,7 @@
   import ShelfLink from '../components/ShelfLink.html'
   import Search from '../components/Search.html'
   export default {
-    props: ["barcode", "item"],
+    props: ["item_supplier", "item_id", "item"],
     data() {
         return {
             query: "",

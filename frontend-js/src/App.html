@@ -15,7 +15,7 @@
     '/': Shelf,
     '/shelf': Shelf,
     '/shelf/:shelfId': Shelf,
-    '/item/:barcode': {
+    '/item/:item_supplier/:item_id': {
       Component: Item,
       // might be we want to pass data as props instead
       props: {
@@ -25,7 +25,7 @@
       },
     },
   },{
-    pathRegex: '[a-zA-Z0-9\.]+',
+    pathRegex: '[a-zA-Z0-9\._:]+',
     defaultRoute: NotFound
   })
   createRouter.listen(() => {

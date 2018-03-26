@@ -9,7 +9,7 @@
           <tr>
             <td><abbr title="{{res.last_at.iso8601}}">{{res.last_at.ago || res.last_at.iso8601}}</abbr></td>
             <td><ShelfLink loc="{{res.tags[0].temporary.loc}}"></td>
-            <td><a href="/#/item/{{res.item_id}}">{{res.item_id}}</a></td>
+            <td><a href="/#/item/{{res.item_supplier}}/{{res.item_id}}">{{res.item_id}}</a></td>
             <td>{{ Array.isArray(res.meta.callnumber) ? res.meta.callnumber.join(' ') : res.meta.callnumber }}</td>
             <td style="max-width: 200px;"><abbr title="{{res.meta.author}}">{{res.meta.author}}</abbr></td>
             <td style="max-width: 200px;"><abbr title="{{res.meta.title}}">{{res.meta.title}}</abbr></td>
