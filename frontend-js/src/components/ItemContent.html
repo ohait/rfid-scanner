@@ -11,7 +11,7 @@
     {{/if}}
     <table border=1 cellspacing=0 cellpadding=3 style="max-width: 250px; ">
       <thead>
-        <tr><th>at</th><th>shelf</th><th>type</th><th>rfid</th></tr>
+        <tr><th>at</th><th>shelf</th><th>action</th><th>rfid</th></tr>
       </thead>
       <tbody>
         {{#each item.response.history as it}}
@@ -19,7 +19,8 @@
             <td>
                 <ShelfLink loc="{{it.location}}" />
             </td>
-            <td>{{#each it.actions as action }}<div>{{action}}</div>{{/each}}</td><td><abbr title="{{it.dev || 'N/A'}}">{{it.rfid || 'N/A'}}</abbr></td></tr>
+            <td><div class="compact">{{#each it.actions as action }}<div>{{action}}</div>{{/each}}</div></td>
+            <td><abbr title="{{it.dev || 'N/A'}}">{{it.rfid || 'N/A'}}</abbr></td></tr>
         {{/each}}
       </tbody>
     </table>
@@ -58,5 +59,14 @@
     border-top: none;
     border-left: none;
     font-size: 12px;
+  }
+  .compact {
+    max-height: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .compact:hover {
+    max-height: 100px;
   }
 </style>
