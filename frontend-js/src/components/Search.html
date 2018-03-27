@@ -10,7 +10,7 @@
               {{#each answer.results as res }}
                 <tr>
                   <td><abbr title="{{res.last_seen.iso8601}}">{{res.last_seen.ago || res.last_seen.iso8601}}</abbr></td>
-                  <td><a href="/#/item/{{res.item_id}}">{{res.item_id}}</a></td>
+                  <td><a href="/#/item/{{res.item_supplier}}/{{res.item_id}}">{{res.item_id}}</a></td>
                   <td style="max-width: 200px;"><abbr title="{{res.meta.author}}">{{res.meta.author}}</abbr></td>
                   <td style="max-width: 200px;"><abbr title="{{res.meta.title}}">{{res.meta.title}}</abbr></td>
                 </tr>
